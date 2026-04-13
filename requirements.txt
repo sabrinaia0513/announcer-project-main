@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+sqlalchemy
+pydantic
+python-docx
+selenium
+webdriver-manager
+beautifulsoup4
+requests
+websockets
+passlib
+bcrypt
+python-multipart
