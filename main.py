@@ -135,15 +135,26 @@ class CommentUpdate(BaseModel): username: str; content: str
 
 class UserUpdateInfo(BaseModel): new_nickname: Optional[str] = None; new_password: Optional[str] = None
 
+MAX_FILE_SIZE = 10 * 1024 * 1024 
 
 @app.post("/upload")
 def upload_file(file: UploadFile = File(...)):
+    # 1. 파일의 진짜 크기를 측정합니다.
+    file.file.seek(0, 2)
+    file_size = file.file.tell()
+    file.file.seek(0)
+    
+    # 2. 10MB가 넘으면 가차 없이 에러를 던집니다!
+    if file_size > MAX_FILE_SIZE:
+        raise HTTPException(status_code=413, detail="첨부파일은 10MB를 초과할 수 없습니다.")
+
+    # 3. 무사히 통과했다면 원래대로 저장합니다.
     ext = file.filename.split('.')[-1]
     filename = f"{uuid.uuid4()}.{ext}"
     file_path = f"uploads/{filename}"
-    with open(file_path, "wb") as buffer:
+    with open(file_path, "wb") as buffer: 
         shutil.copyfileobj(file.file, buffer)
-    # 💡 렌더 주소 떼어버리고 깔끔하게 폴더 경로만 돌려줍니다!
+        
     return {"file_url": f"/{file_path}"}
 
 @app.post("/signup")
@@ -433,9 +444,6 @@ class GenerateRequest(BaseModel): username: str; password: str
 # 🎙️ [새로 추가됨] 관리자 전용 대본 게시판 API
 # ==========================================
 
-# (💡 주의: 관리자로 사용할 아이디를 아래 변수에 정확히 적어주세요!)
-ADMIN_USERNAME = "sabrinaia" 
-
 # 1. [모든 유저] 대본 목록 불러오기 API
 @app.get("/scripts")
 def get_scripts(db: Session = Depends(get_db)):
@@ -446,19 +454,26 @@ def get_scripts(db: Session = Depends(get_db)):
 # 2. [관리자 전용] 새 대본 업로드 API
 @app.post("/scripts")
 def create_script(
-    username: str = Form(...),  # 프론트엔드에서 보내는 현재 로그인한 아이디
+    username: str = Form(...),
     title: str = Form(...),
     content: str = Form(...),
     file: UploadFile = File(None),
     db: Session = Depends(get_db)
 ):
-    # 🚨 관리자 아이디가 아니면 에러를 뱉고 쫓아냅니다!
-    if username != ADMIN_USERNAME:
+    user = db.query(database.User).filter(database.User.username == username).first()
+    if not user or not user.is_admin:
         raise HTTPException(status_code=403, detail="관리자만 대본을 업로드할 수 있습니다.")
 
     file_url = None
     if file:
-        # 파일 이름이 겹치지 않게 고유한 이름(uuid)을 붙여줍니다.
+        # 💡 [새로 추가된 방어벽] 대본 첨부파일도 10MB를 넘는지 검사합니다!
+        file.file.seek(0, 2)
+        file_size = file.file.tell()
+        file.file.seek(0)
+        
+        if file_size > 10 * 1024 * 1024:
+            raise HTTPException(status_code=413, detail="대본 첨부파일은 10MB를 초과할 수 없습니다.")
+            
         os.makedirs("uploads", exist_ok=True)
         file_extension = file.filename.split(".")[-1]
         unique_filename = f"{uuid.uuid4()}.{file_extension}"
@@ -466,18 +481,11 @@ def create_script(
         
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
-        file_url = f"/uploads/{unique_filename}"
+        file_url = f"/{file_path}"
 
-    # DB에 저장
-    new_script = database.Script(
-        title=title,
-        content=content,
-        file_url=file_url
-    )
+    new_script = database.Script(title=title, content=content, file_url=file_url)
     db.add(new_script)
     db.commit()
-    db.refresh(new_script)
-    
     return {"message": "대본이 성공적으로 업로드되었습니다!"}
   
 if __name__ == "__main__":
