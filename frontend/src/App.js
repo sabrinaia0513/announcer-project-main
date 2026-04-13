@@ -236,20 +236,41 @@ function WritePostPage({ currentUser }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsUploading(true);
+
+    // 💡 10MB 검사 방어벽
+    if (file && file.size > 10 * 1024 * 1024) {
+      alert("🚨 파일 크기가 너무 큽니다! (최대 10MB까지만 업로드 가능)");
+      setIsUploading(false);
+      return; // 더 이상 진행하지 않고 여기서 스톱!
+    }
+
     try {
       let uploadedFileUrl = null;
       if (file) {
-        const formData = new FormData(); formData.append("file", file);
+        const formData = new FormData(); 
+        formData.append("file", file);
         const uploadRes = await axios.post(`${BACKEND_URL}/upload`, formData, { headers: { "Content-Type": "multipart/form-data" } });
         uploadedFileUrl = uploadRes.data.file_url;
       }
+      
       await axios.post(`${BACKEND_URL}/posts`, {
-        username: currentUser.username, password: currentUser.password, title, content, category, file_url: uploadedFileUrl,
-        deadline: category === '공고' ? deadline : null, external_link: category === '공고' ? externalLink : null
+        username: currentUser.username, 
+        password: currentUser.password, 
+        title, 
+        content, 
+        category, 
+        file_url: uploadedFileUrl,
+        deadline: category === '공고' ? deadline : null, 
+        external_link: category === '공고' ? externalLink : null
       });
+      
       alert("글이 등록되었습니다! (+10점)");
       navigate('/');
-    } catch (error) { alert("작성 실패"); } finally { setIsUploading(false); }
+    } catch (error) { 
+      alert("작성 실패"); 
+    } finally { 
+      setIsUploading(false); 
+    }
   };
 
   if (!currentUser) return null;
