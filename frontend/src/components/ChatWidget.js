@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { WS_BACKEND_URL } from '../lib/api';
 
 function ChatWidget({ currentUser }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -9,7 +10,7 @@ function ChatWidget({ currentUser }) {
 
   useEffect(() => {
     if (isOpen) {
-      ws.current = new WebSocket('ws://43.201.164.155:8000/ws/chat');
+      ws.current = new WebSocket(`${WS_BACKEND_URL}/ws/chat`);
       ws.current.onmessage = (event) => {
         try { setMessages((prev) => [...prev, JSON.parse(event.data)]); }
         catch (e) { console.error('채팅 메시지 파싱 실패:', e); }

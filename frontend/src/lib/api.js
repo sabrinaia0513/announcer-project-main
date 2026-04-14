@@ -1,6 +1,26 @@
 import axios from 'axios';
 
-export const BACKEND_URL = "http://43.201.164.155:8000";
+const deriveOrigin = (url) => new URL(url).origin;
+
+const resolveBackendUrl = () => {
+  if (process.env.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL;
+  }
+
+  if (typeof window !== 'undefined') {
+    const { protocol, hostname } = window.location;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return 'http://127.0.0.1:8000';
+    }
+    return `${protocol}//${hostname}:8000`;
+  }
+
+  return 'http://127.0.0.1:8000';
+};
+
+export const BACKEND_URL = resolveBackendUrl();
+export const MEDIA_BASE_URL = process.env.REACT_APP_MEDIA_URL || deriveOrigin(BACKEND_URL);
+export const WS_BACKEND_URL = BACKEND_URL.replace(/^http/, 'ws');
 
 // 401 토큰 만료 자동 처리 인터셉터
 axios.interceptors.response.use(

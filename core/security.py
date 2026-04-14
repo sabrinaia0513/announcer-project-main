@@ -29,12 +29,12 @@ def get_user_level(points: int) -> str:
         return "👑 열매"
 
 
-def validate_file_extension(filename: str) -> str:
+def validate_file_extension(filename: str, allowed_extensions: set[str] = ALLOWED_EXTENSIONS) -> str:
     """안전한 확장자인지 확인 후 확장자를 반환합니다."""
     ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else ''
-    if ext not in ALLOWED_EXTENSIONS:
+    if ext not in allowed_extensions:
         raise HTTPException(
             status_code=400,
-            detail=f"허용되지 않는 파일 형식입니다. 허용: {', '.join(ALLOWED_EXTENSIONS)}"
+            detail=f"허용되지 않는 파일 형식입니다. 허용: {', '.join(sorted(allowed_extensions))}"
         )
     return ext

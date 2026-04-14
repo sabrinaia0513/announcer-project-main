@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, UploadFile, File
 
 import database
 from core.deps import get_current_user
-from core.config import MAX_FILE_SIZE
+from core.config import MAX_FILE_SIZE, UPLOAD_DIR
 from core.security import validate_file_extension
 from fastapi import HTTPException
 
@@ -24,8 +24,8 @@ def upload_file(file: UploadFile = File(...), current_user: database.User = Depe
 
     ext = validate_file_extension(file.filename)
     filename = f"{uuid.uuid4()}.{ext}"
-    file_path = f"uploads/{filename}"
+    file_path = os.path.join(UPLOAD_DIR, filename)
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    return {"file_url": f"/{file_path}"}
+    return {"file_url": f"/uploads/{filename}"}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { BACKEND_URL } from './api';
+import { MEDIA_BASE_URL } from './api';
 
 export const CATEGORIES = ['자유', '스터디', '질문', '정보', '공고'];
 export const POSTS_PER_PAGE = 5;
@@ -8,7 +8,7 @@ export const inputStyle = "w-full border border-gray-300 rounded-lg px-4 py-3 fo
 
 export const renderMedia = (url) => {
   if (!url) return null;
-  const fullUrl = url.startsWith('/') ? `${BACKEND_URL}${url}` : url;
+  const fullUrl = url.startsWith('/') ? `${MEDIA_BASE_URL}${url}` : url;
   const lowerUrl = fullUrl.toLowerCase();
 
   if (lowerUrl.match(/\.(jpeg|jpg|gif|png|webp)$/)) return <img src={fullUrl} alt="첨부 이미지" className="max-w-full h-auto rounded-xl shadow-sm mb-6 border border-gray-100" />;

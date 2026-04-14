@@ -48,7 +48,7 @@ function LoginPage({ setCurrentUser }) {
 
   return (
     <div className="max-w-md mx-auto bg-white p-8 rounded-2xl shadow-sm border border-gray-100 mt-10">
-      <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">{isLoginMode ? '다시 오셨군요! 👋' : '새 스터디원 가입 🎉'}</h2>
+      <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">{isLoginMode ? '로그인' : '회원가입'}</h2>
       <form onSubmit={isLoginMode ? handleLogin : handleSignup} className="space-y-4">
         <div><label className="block text-sm font-bold text-gray-700 mb-1">아이디</label><input type="text" value={loginId} onChange={(e) => setLoginId(e.target.value)} required className={inputStyle} /></div>
         {!isLoginMode && <div><label className="block text-sm font-bold text-gray-700 mb-1">사용할 닉네임</label><input type="text" value={nickname} onChange={(e) => setNickname(e.target.value)} required className={inputStyle} /></div>}

@@ -7,8 +7,10 @@ from jose import JWTError, jwt
 
 import database
 import auth
+from core.config import API_PREFIX
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+token_url = f"{API_PREFIX}/login" if API_PREFIX else "/login"
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl=token_url)
 
 
 def get_db():

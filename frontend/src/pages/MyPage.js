@@ -88,7 +88,7 @@ function MyPage({ currentUser, setCurrentUser }) {
         {activeTab === 'comments' && <div className="space-y-3">{activity.my_comments.map(comment => <Link to={`/post/${comment.원문번호}`} key={comment.댓글번호} className="block p-4 bg-gray-50 hover:bg-indigo-50 rounded-lg border border-gray-200"><div className="flex justify-between items-center"><p className="text-sm text-gray-800 truncate pr-4">{comment.내용}</p><span className="text-[10px] text-gray-500 whitespace-nowrap">{comment.작성시간}</span></div></Link>)}</div>}
         {activeTab === 'admin' && currentUser.is_admin && (
           <div className="bg-red-50 p-6 rounded-xl border border-red-200">
-            <h3 className="text-lg font-extrabold text-red-800 mb-2">👑 신규 관리자 임명 (권한 부여)</h3>
+            <h3 className="text-lg font-extrabold text-red-800 mb-2">신규 관리자 임명 (권한 부여)</h3>
             <p className="text-xs text-red-600 mb-6">입력한 아이디의 유저에게 게시글 삭제 및 대본 업로드 권한을 영구적으로 부여합니다. 신중하게 사용하세요.</p>
 
             <form onSubmit={handlePromoteAdmin} className="flex flex-col sm:flex-row gap-3">

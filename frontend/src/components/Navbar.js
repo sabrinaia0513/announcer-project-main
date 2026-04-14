@@ -15,7 +15,7 @@ function Navbar({ currentUser, handleLogout, notifications, setNotifications }) 
     <nav className="fixed top-0 left-0 w-full bg-white shadow-sm z-50 border-b border-gray-200">
       <div className="max-w-3xl mx-auto px-4 h-16 flex justify-between items-center">
         <Link to="/" className="font-extrabold text-xl text-blue-600 tracking-tight flex items-center gap-1">
-          🎙️ <span className="hidden sm:inline">아나운서 커뮤니티</span><span className="sm:hidden">아나커뮤</span>
+          🎙️ <span className="hidden sm:inline">아우성</span><span className="sm:hidden">아우성</span>
         </Link>
 
         <div className="flex items-center gap-4 text-gray-700">

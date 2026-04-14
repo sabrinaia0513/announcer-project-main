@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { getAccessToken } from './lib/api';
+import { getAccessToken, WS_BACKEND_URL } from './lib/api';
 import Navbar from './components/Navbar';
 import ChatWidget from './components/ChatWidget';
 import HomePage from './pages/HomePage';
@@ -24,7 +24,7 @@ function App() {
     if (currentUser) {
       const token = getAccessToken();
       if (!token) return;
-      wsNotify = new WebSocket(`ws://43.201.164.155:8000/ws/notify/${currentUser.username}?token=${token}`);
+      wsNotify = new WebSocket(`${WS_BACKEND_URL}/ws/notify/${currentUser.username}?token=${token}`);
       wsNotify.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);

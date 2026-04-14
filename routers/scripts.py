@@ -1,3 +1,4 @@
+import os
 import shutil
 import uuid
 
@@ -6,7 +7,7 @@ from sqlalchemy.orm import Session
 
 import database
 from core.deps import get_db, get_current_user
-from core.config import MAX_FILE_SIZE
+from core.config import MAX_FILE_SIZE, SCRIPT_ALLOWED_EXTENSIONS, UPLOAD_DIR
 from core.security import validate_file_extension
 
 router = APIRouter(tags=["scripts"])
@@ -47,13 +48,13 @@ def create_script(
         if file_size > MAX_FILE_SIZE:
             raise HTTPException(status_code=413, detail="대본 첨부파일은 10MB를 초과할 수 없습니다.")
 
-        ext = validate_file_extension(file.filename)
+        ext = validate_file_extension(file.filename, SCRIPT_ALLOWED_EXTENSIONS)
         unique_filename = f"{uuid.uuid4()}.{ext}"
-        file_path = f"uploads/{unique_filename}"
+        file_path = os.path.join(UPLOAD_DIR, unique_filename)
 
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
-        file_url = f"/{file_path}"
+        file_url = f"/uploads/{unique_filename}"
 
     new_script = database.Script(title=title, content=content, file_url=file_url)
     db.add(new_script)

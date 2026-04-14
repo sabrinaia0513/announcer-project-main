@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-
-const API_URL = "http://43.201.164.155:8000";
+import { BACKEND_URL as API_URL, MEDIA_BASE_URL } from './lib/api';
 
 function ScriptBoard() {
   const [scripts, setScripts] = useState([]);
@@ -58,6 +57,8 @@ function ScriptBoard() {
     } catch (error) {
       if (error.response && error.response.status === 403) {
         alert("권한이 없습니다. 관리자만 업로드 가능합니다.");
+      } else if (error.response?.data?.detail) {
+        alert(error.response.data.detail);
       } else {
         alert("업로드 중 오류가 발생했습니다.");
       }
@@ -66,7 +67,7 @@ function ScriptBoard() {
 
   const handleDownload = async (fileUrl, scriptTitle) => {
     try {
-      const fileRes = await axios.get(`${API_URL}${fileUrl}`, { responseType: 'blob' });
+      const fileRes = await axios.get(`${MEDIA_BASE_URL}${fileUrl}`, { responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([fileRes.data]));
       const ext = fileUrl.split('.').pop(); 
       const cleanTitle = scriptTitle.replace(/[/\\?%*:|"<>]/g, '_');
@@ -90,7 +91,7 @@ function ScriptBoard() {
 
       {isAdmin && (
         <div style={{ border: '2px solid #007bff', padding: '20px', borderRadius: '10px', marginBottom: '30px' }}>
-          <h3 style={{ color: '#007bff', marginTop: 0 }}>👑 관리자 전용 업로드</h3>
+          <h3 style={{ color: '#007bff', marginTop: 0 }}>관리자 전용 업로드</h3>
           <form onSubmit={handleUpload}>
             <input
               type="text" placeholder="대본 제목 (예: [KBS] 9시 뉴스 단신)"
@@ -103,7 +104,7 @@ function ScriptBoard() {
               style={{ width: '100%', padding: '10px', height: '150px', marginBottom: '10px' }}
             />
             <input
-              type="file" onChange={(e) => setFile(e.target.files[0])}
+              type="file" accept=".txt,.pdf,.doc,.docx,.hwp,.hwpx,image/*,audio/*,video/*" onChange={(e) => setFile(e.target.files[0])}
               style={{ display: 'block', marginBottom: '10px' }}
             />
             <button type="submit" style={{ padding: '10px 20px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '5px' }}>
@@ -125,7 +126,7 @@ function ScriptBoard() {
                 onClick={() => handleDownload(script.file_url, script.title)}
                 style={{ display: 'inline-block', marginTop: '10px', padding: '8px 15px', backgroundColor: '#28a745', color: 'white', border: 'none', cursor: 'pointer', borderRadius: '5px', fontWeight: 'bold' }}
               >
-                💾 원본 파일 다운로드
+                원본 파일 다운로드
               </button>
             )}
           </div>

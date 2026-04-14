@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { BACKEND_URL } from '../lib/api';
+import { BACKEND_URL, MEDIA_BASE_URL } from '../lib/api';
 import { CATEGORIES, POSTS_PER_PAGE, MAX_PAGE_BUTTONS, inputStyle, calculateDday } from '../lib/utils';
 
 function HomePage({ currentUser }) {
@@ -50,7 +50,7 @@ function HomePage({ currentUser }) {
       const cleanTitle = latestScript.title.replace(/[/\\?%*:|"<>]/g, '_');
 
       if (latestScript.file_url) {
-        const fileRes = await axios.get(`${BACKEND_URL}${latestScript.file_url}`, { responseType: 'blob' });
+        const fileRes = await axios.get(`${MEDIA_BASE_URL}${latestScript.file_url}`, { responseType: 'blob' });
         const url = window.URL.createObjectURL(new Blob([fileRes.data]));
         const ext = latestScript.file_url.split('.').pop();
 
@@ -112,7 +112,7 @@ function HomePage({ currentUser }) {
               disabled={isDownloading}
               className={`w-full sm:w-auto px-8 py-4 rounded-full font-bold text-white text-base sm:text-lg transition-all shadow-md ${isDownloading ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700 hover:-translate-y-1'}`}
             >
-              {isDownloading ? '다운로드 준비 중...' : '📥 오늘의 원고 바로 다운로드'}
+              {isDownloading ? '다운로드 준비 중...' : ' 오늘의 원고 바로 다운로드'}
             </button>
             <button
               onClick={() => navigate('/scripts')}
@@ -136,7 +136,7 @@ function HomePage({ currentUser }) {
 
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center px-1 mb-2 gap-4">
-          <h2 className="text-xl font-bold text-gray-800 shrink-0">{sortBy === 'popular' ? '🔥 핫 게시판' : '게시글 목록'}</h2>
+          <h2 className="text-xl font-bold text-gray-800 shrink-0">{sortBy === 'popular' ? '🔥 인기글' : '게시글 목록'}</h2>
           <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
             <div className="flex space-x-2 overflow-x-auto pb-1 scrollbar-hide">
               <button onClick={() => {setSelectedTab('전체'); setCurrentPage(1);}} className={`px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap ${selectedTab === '전체' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'}`}>전체</button>
