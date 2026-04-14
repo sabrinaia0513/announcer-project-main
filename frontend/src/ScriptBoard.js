@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-// 🚨 주의: 현재 로컬 테스트 주소입니다.
 const API_URL = "http://43.201.164.155:8000";
 
 function ScriptBoard() {
@@ -12,7 +11,8 @@ function ScriptBoard() {
 
   const savedUser = localStorage.getItem('announcer_user');
   const currentUser = savedUser ? JSON.parse(savedUser) : null;
-  const currentUsername = currentUser ? currentUser.username : null;
+  // 💡 [수정됨] 토큰 가져오기 (권한 인증용)
+  const token = currentUser ? currentUser.access_token : null;
   const isAdmin = currentUser ? currentUser.is_admin : false;
 
   useEffect(() => {
@@ -36,7 +36,6 @@ function ScriptBoard() {
     }
 
     const formData = new FormData();
-    formData.append("username", currentUsername);
     formData.append("title", title);
     formData.append("content", content);
     if (file) {
@@ -44,8 +43,12 @@ function ScriptBoard() {
     }
 
     try {
+      // 💡 [수정됨] 업로드 시 헤더에 Bearer 토큰 추가
       await axios.post(`${API_URL}/scripts`, formData, {
-        headers: { "Content-Type": "multipart/form-data" }
+        headers: { 
+          "Content-Type": "multipart/form-data",
+          "Authorization": `Bearer ${token}` 
+        }
       });
       alert("대본이 성공적으로 업로드되었습니다!");
       setTitle('');
@@ -61,12 +64,11 @@ function ScriptBoard() {
     }
   };
 
-  // 🌟 [핵심] 복잡한 파일명을 무시하고 예쁜 이름으로 강제 다운로드 시키는 함수
   const handleDownload = async (fileUrl, scriptTitle) => {
     try {
       const fileRes = await axios.get(`${API_URL}${fileUrl}`, { responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([fileRes.data]));
-      const ext = fileUrl.split('.').pop(); // 확장자 가져오기
+      const ext = fileUrl.split('.').pop(); 
       const cleanTitle = scriptTitle.replace(/[/\\?%*:|"<>]/g, '_');
 
       const link = document.createElement('a');

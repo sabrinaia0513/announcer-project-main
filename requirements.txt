@@ -11,3 +11,4 @@ websockets
 passlib
 bcrypt
 python-multipart
+python-jose[cryptography]
