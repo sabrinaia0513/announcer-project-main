@@ -62,7 +62,7 @@ sudo systemctl status announcer
 
 ## Nginx
 
-Copy `deploy/nginx/annausung.com.conf` to `/etc/nginx/sites-available/annausung.com` and link it:
+First copy the pre-SSL config `deploy/nginx/annausung.com.conf` to `/etc/nginx/sites-available/annausung.com` and link it:
 
 ```bash
 sudo ln -s /etc/nginx/sites-available/annausung.com /etc/nginx/sites-enabled/
@@ -76,6 +76,14 @@ sudo systemctl reload nginx
 sudo apt update
 sudo apt install nginx certbot python3-certbot-nginx
 sudo certbot --nginx -d annausung.com -d www.annausung.com
+```
+
+After certbot succeeds, replace the nginx config with the SSL version and reload:
+
+```bash
+sudo cp /home/ubuntu/announcer-project-main/deploy/nginx/annausung.com.ssl.conf /etc/nginx/sites-available/annausung.com
+sudo nginx -t
+sudo systemctl reload nginx
 ```
 
 ## Open ports
