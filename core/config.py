@@ -1,0 +1,39 @@
+import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / ".env")
+
+# ==========================================
+# 허용 파일 확장자 화이트리스트
+# ==========================================
+ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "gif", "webp", "mp4", "webm", "mov", "mp3", "wav", "ogg"}
+SCRIPT_ALLOWED_EXTENSIONS = ALLOWED_EXTENSIONS | {"txt", "pdf", "doc", "docx", "hwp", "hwpx"}
+MAX_FILE_SIZE = int(os.environ.get("MAX_FILE_SIZE", str(10 * 1024 * 1024)))
+UPLOAD_DIR = os.environ.get("UPLOAD_DIR", str(BASE_DIR / "uploads"))
+
+
+def _parse_csv_env(name: str, default: str) -> list[str]:
+	raw_value = os.environ.get(name, default)
+	return [item.strip() for item in raw_value.split(",") if item.strip()]
+
+
+def _normalize_path_prefix(value: str) -> str:
+	value = value.strip()
+	if not value or value == "/":
+		return ""
+	return f"/{value.strip('/')}"
+
+# ==========================================
+# CORS 허용 오리진 (프론트엔드 도메인만 허용)
+# ==========================================
+ALLOWED_ORIGINS = _parse_csv_env("ALLOWED_ORIGINS", "http://localhost:3000")
+INITIAL_ADMIN_USERNAMES = set(_parse_csv_env("INITIAL_ADMIN_USERNAMES", "sabrinaia"))
+API_PREFIX = _normalize_path_prefix(os.environ.get("API_PREFIX", ""))
+
+DATABASE_URL = os.environ.get("DATABASE_URL", f"sqlite:///{(BASE_DIR / 'community.db').as_posix()}")
+APP_HOST = os.environ.get("APP_HOST", "0.0.0.0")
+APP_PORT = int(os.environ.get("APP_PORT", "8000"))
+APP_RELOAD = os.environ.get("APP_RELOAD", "false").lower() == "true"

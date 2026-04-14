@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+sqlalchemy
+pydantic
+python-dotenv
+python-docx
+selenium
+webdriver-manager
+beautifulsoup4
+requests
+websockets
+passlib
+bcrypt==4.0.1
+python-multipart
+python-jose[cryptography]
