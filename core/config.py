@@ -29,7 +29,12 @@ def _normalize_path_prefix(value: str) -> str:
 # ==========================================
 # CORS 허용 오리진 (프론트엔드 도메인만 허용)
 # ==========================================
-ALLOWED_ORIGINS = _parse_csv_env("ALLOWED_ORIGINS", "http://localhost:3000")
+ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "https://annausung.com",
+    "https://www.annausung.com",
+    "https://announcer-project-main.vercel.app" # Vercel 주소도 잊지 말고 넣어주세요!
+]
 INITIAL_ADMIN_USERNAMES = set(_parse_csv_env("INITIAL_ADMIN_USERNAMES", "sabrinaia"))
 API_PREFIX = _normalize_path_prefix(os.environ.get("API_PREFIX", ""))
 
