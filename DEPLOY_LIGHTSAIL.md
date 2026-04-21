@@ -42,7 +42,6 @@ npm run build
 ```
 
 The nginx configs in this repository serve the frontend directly from `/home/ubuntu/announcer-project-main/frontend/build`, so no additional copy step is required after `npm run build`.
-
 ## Backend dependencies
 
 ```bash
@@ -87,7 +86,6 @@ For the pre-SSL setup, you can run the helper script after creating `.env`:
 cd /home/ubuntu/announcer-project-main
 bash deploy/setup_lightsail.sh
 ```
-
 ## HTTPS
 
 ```bash
