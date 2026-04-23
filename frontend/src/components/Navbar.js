@@ -5,6 +5,7 @@ function Navbar({ currentUser, handleLogout, notifications, setNotifications }) 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showNotiDropdown, setShowNotiDropdown] = useState(false);
   const location = useLocation();
+  const brandLogoSrc = `${process.env.PUBLIC_URL}/ausung-logo.svg`;
 
   useEffect(() => {
     setIsMenuOpen(false);
@@ -14,8 +15,8 @@ function Navbar({ currentUser, handleLogout, notifications, setNotifications }) 
   return (
     <nav className="fixed top-0 left-0 w-full bg-white shadow-sm z-50 border-b border-gray-200">
       <div className="max-w-3xl mx-auto px-4 h-16 flex justify-between items-center">
-        <Link to="/" className="font-extrabold text-xl text-blue-600 tracking-tight flex items-center gap-1">
-          🎙️ <span className="hidden sm:inline">아우성</span><span className="sm:hidden">아우성</span>
+        <Link to="/" className="flex items-center">
+          <img src={brandLogoSrc} alt="아우성" className="h-9 w-auto sm:h-11" />
         </Link>
 
         <div className="flex items-center gap-4 text-gray-700">
