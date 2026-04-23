@@ -4,6 +4,24 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { BACKEND_URL, getAuthHeader } from '../lib/api';
 import { inputStyle, renderMedia } from '../lib/utils';
 
+function PostDetailSpinner() {
+  return (
+    <div className="flex min-h-[55vh] items-center justify-center px-6">
+      <div className="flex flex-col items-center gap-4 rounded-3xl border border-gray-100 bg-white/90 px-10 py-12 shadow-sm backdrop-blur">
+        <div className="relative h-16 w-16">
+          <div className="absolute inset-0 rounded-full border-4 border-gray-200" />
+          <div className="absolute inset-0 animate-spin rounded-full border-4 border-transparent border-t-blue-600 border-r-sky-400" />
+          <div className="absolute inset-3 rounded-full bg-blue-50 animate-pulse" />
+        </div>
+        <div className="text-center">
+          <p className="text-sm font-semibold text-gray-700">게시글을 불러오는 중입니다</p>
+          <p className="mt-1 text-xs text-gray-400">잠시만 기다려 주세요.</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PostDetailPage({ currentUser }) {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -32,7 +50,7 @@ function PostDetailPage({ currentUser }) {
   const handleDeletePost = async () => { if (!window.confirm("삭제하시겠습니까?")) return; try { await axios.delete(`${BACKEND_URL}/posts/${id}`, getAuthHeader()); alert("삭제됨"); navigate('/'); } catch (error) {} };
   const handleDeleteComment = async (commentId) => { if (!window.confirm("삭제하시겠습니까?")) return; try { await axios.delete(`${BACKEND_URL}/comments/${commentId}`, getAuthHeader()); fetchComments(); } catch (error) {} };
 
-  if (!post) return <div className="text-center py-20 font-bold text-gray-500">로딩 중...</div>;
+  if (!post) return <PostDetailSpinner />;
   const isPostLiked = currentUser && post.좋아요누른사람들.includes(currentUser.nickname);
   const parentComments = comments.filter(c => c.부모댓글번호 === null);
   const childComments = comments.filter(c => c.부모댓글번호 !== null);
