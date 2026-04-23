@@ -16,7 +16,14 @@ function App() {
 
   useEffect(() => {
     const savedUser = localStorage.getItem('announcer_user');
-    if (savedUser) setCurrentUser(JSON.parse(savedUser));
+    if (!savedUser) return;
+
+    try {
+      setCurrentUser(JSON.parse(savedUser));
+    } catch (error) {
+      console.error('저장된 사용자 정보 파싱 실패:', error);
+      localStorage.removeItem('announcer_user');
+    }
   }, []);
 
   useEffect(() => {
@@ -24,18 +31,35 @@ function App() {
     if (currentUser) {
       const token = getAccessToken();
       if (!token) return;
+
+      const isNotificationSupported = typeof window !== 'undefined' && 'Notification' in window;
+      const canUseSystemNotification = isNotificationSupported && window.isSecureContext;
+
       wsNotify = new WebSocket(`${WS_BACKEND_URL}/ws/notify/${currentUser.username}?token=${token}`);
       wsNotify.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
           setNotifications((prev) => [data, ...prev]);
-          if (Notification.permission === 'granted') {
-            new Notification('새로운 알림', { body: data.text });
+          if (canUseSystemNotification && Notification.permission === 'granted') {
+            try {
+              new Notification('새로운 알림', { body: data.text });
+            } catch (error) {
+              console.error('시스템 알림 생성 실패:', error);
+            }
           }
         } catch (e) { console.error('알림 파싱 실패:', e); }
       };
       wsNotify.onerror = () => console.error('알림 WebSocket 연결 오류');
-      if (Notification.permission !== 'denied') Notification.requestPermission();
+
+      if (canUseSystemNotification && Notification.permission === 'default') {
+        try {
+          Notification.requestPermission().catch((error) => {
+            console.error('알림 권한 요청 실패:', error);
+          });
+        } catch (error) {
+          console.error('알림 권한 요청 실패:', error);
+        }
+      }
     }
     return () => { if (wsNotify) wsNotify.close(); };
   }, [currentUser]);
