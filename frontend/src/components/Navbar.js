@@ -5,7 +5,7 @@ function Navbar({ currentUser, handleLogout, notifications, setNotifications }) 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showNotiDropdown, setShowNotiDropdown] = useState(false);
   const location = useLocation();
-  const brandLogoSrc = `${process.env.PUBLIC_URL}/ausung-logo.svg`;
+  const brandLogoSrc = `${process.env.PUBLIC_URL}/logo.png`;
 
   useEffect(() => {
     setIsMenuOpen(false);
