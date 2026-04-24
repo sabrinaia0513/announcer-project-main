@@ -15,8 +15,9 @@ function Navbar({ currentUser, handleLogout, notifications, setNotifications }) 
   return (
     <nav className="fixed top-0 left-0 w-full bg-white shadow-sm z-50 border-b border-gray-200">
       <div className="max-w-3xl mx-auto px-4 h-16 flex justify-between items-center">
-        <Link to="/" className="flex items-center">
+        <Link to="/" className="flex items-center gap-3">
           <img src={brandLogoSrc} alt="아우성" className="h-9 w-auto sm:h-11" />
+          <span className="text-xl font-extrabold tracking-tight text-gray-900 sm:text-2xl">아우성</span>
         </Link>
 
         <div className="flex items-center gap-4 text-gray-700">

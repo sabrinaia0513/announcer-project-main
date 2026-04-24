@@ -32,7 +32,7 @@ function ChatWidget({ currentUser }) {
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
       {isOpen && (
         <div className="bg-white w-[85vw] sm:w-96 h-[500px] max-h-[70vh] rounded-2xl shadow-2xl border border-gray-200 mb-4 flex flex-col overflow-hidden">
-          <div className="bg-blue-600 text-white p-4 font-bold flex justify-between items-center shadow-md z-10"><span>💬 라운지</span><button onClick={() => setIsOpen(false)} className="text-blue-200 hover:text-white">✕</button></div>
+          <div className="bg-blue-600 text-white p-4 font-bold flex justify-end items-center shadow-md z-10"><button onClick={() => setIsOpen(false)} className="text-blue-200 hover:text-white">✕</button></div>
           <div className="flex-1 p-4 overflow-y-auto bg-blue-50 space-y-4">
             {messages.length === 0 ? <div className="text-center text-gray-500 text-sm mt-10">채팅방에 입장했습니다. 인사를 건네보세요! 👋</div> : messages.map((msg, idx) => {
               const isMe = currentUser && msg.user === currentUser.nickname;
