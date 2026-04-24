@@ -104,6 +104,7 @@ def get_posts(
                 "작성자아이디": post.author.username,
                 "작성자등급": get_user_level(post.author.points, post.author.is_admin),
                 "작성시간": format_datetime_kst(post.created_at),
+                "조회수": post.view_count or 0,
                 "좋아요수": len(post.likes),
                 "좋아요누른사람들": [like.user.nickname for like in post.likes],
             }
@@ -112,7 +113,7 @@ def get_posts(
 
 
 @router.get("/posts/{post_id}")
-def get_post(post_id: int, db: Session = Depends(get_db)):
+def get_post(post_id: int, increment_view: bool = True, db: Session = Depends(get_db)):
     post = (
         db.query(database.Post)
         .options(joinedload(database.Post.author), subqueryload(database.Post.likes).joinedload(database.PostLike.user))
@@ -121,6 +122,10 @@ def get_post(post_id: int, db: Session = Depends(get_db)):
     )
     if not post:
         raise HTTPException(status_code=404, detail="게시글을 찾을 수 없습니다.")
+    if increment_view:
+        post.view_count = (post.view_count or 0) + 1
+        db.commit()
+        db.refresh(post)
     return {
         "글번호": post.id,
         "제목": post.title,
@@ -133,6 +138,7 @@ def get_post(post_id: int, db: Session = Depends(get_db)):
         "작성자아이디": post.author.username,
         "작성자등급": get_user_level(post.author.points, post.author.is_admin),
         "작성시간": format_datetime_kst(post.created_at),
+        "조회수": post.view_count or 0,
         "좋아요수": len(post.likes),
         "좋아요누른사람들": [like.user.nickname for like in post.likes],
     }

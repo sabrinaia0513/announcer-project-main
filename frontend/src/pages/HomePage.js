@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { BACKEND_URL, MEDIA_BASE_URL } from '../lib/api';
+import { BACKEND_URL, MEDIA_BASE_URL, getAuthHeader } from '../lib/api';
 import { CATEGORIES, POSTS_PER_PAGE, MAX_PAGE_BUTTONS, inputStyle, calculateDday } from '../lib/utils';
 
 function HomePage({ currentUser }) {
@@ -54,7 +54,7 @@ function HomePage({ currentUser }) {
     setIsDownloading(true);
 
     try {
-      const response = await axios.get(`${BACKEND_URL}/scripts`);
+      const response = await axios.get(`${BACKEND_URL}/scripts`, getAuthHeader());
       if (response.data.length === 0) {
         alert('아직 관리자가 등록한 오늘의 대본이 없습니다!');
         return;
@@ -149,7 +149,7 @@ function HomePage({ currentUser }) {
             >
               {currentUser ? (isDownloading ? '다운로드 준비 중...' : '오늘의 원고 다운로드') : '로그인 후 원고 받기'}
             </button>
-            <button onClick={() => navigate('/scripts')} className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50">
+            <button onClick={() => navigate(currentUser ? '/scripts' : '/login')} className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50">
               원고 보관함 보기
             </button>
           </div>
@@ -208,7 +208,7 @@ function HomePage({ currentUser }) {
           <div className="rounded-[1.75rem] border border-dashed border-slate-300 bg-white/80 p-12 text-center text-slate-500">조건에 맞는 게시글이 없습니다.</div>
         ) : (
           posts.map((post) => (
-            <article key={post.글번호} className="group rounded-[1.75rem] border border-slate-200 bg-white/90 p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md sm:p-6" onClick={() => navigate(`/post/${post.글번호}`)}>
+            <article key={post.글번호} className="group cursor-pointer rounded-[1.75rem] border border-slate-200 bg-white/90 p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md sm:p-6" onClick={() => navigate(`/post/${post.글번호}`)}>
               {sortBy === 'popular' && <div className="mb-3 inline-flex rounded-full bg-red-50 px-3 py-1 text-[11px] font-bold text-red-500">인기글</div>}
 
               <div className="min-w-0">
@@ -227,10 +227,10 @@ function HomePage({ currentUser }) {
                     {post.작성자}
                   </span>
                   <span>{post.작성시간}</span>
+                  <span>조회 {post.조회수}</span>
                 </div>
                 <div className="flex items-center gap-4 font-bold">
                   <span className="text-red-500">❤️ {post.좋아요수}</span>
-                  <span className="text-sky-600">자세히 보기 →</span>
                 </div>
               </div>
             </article>

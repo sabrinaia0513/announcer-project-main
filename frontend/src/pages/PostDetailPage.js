@@ -31,11 +31,12 @@ function PostDetailPage({ currentUser }) {
   const [commentSortBy, setCommentSortBy] = useState('latest');
   const [replyingTo, setReplyingTo] = useState(null);
 
-  useEffect(() => { fetchPostDetail(); fetchComments(); }, [id, commentSortBy]);
-  const fetchPostDetail = async () => { try { const response = await axios.get(`${BACKEND_URL}/posts/${id}`); setPost(response.data); } catch (error) { navigate('/'); } };
+  useEffect(() => { fetchPostDetail(true); }, [id]);
+  useEffect(() => { fetchComments(); }, [id, commentSortBy]);
+  const fetchPostDetail = async (incrementView = true) => { try { const response = await axios.get(`${BACKEND_URL}/posts/${id}`, { params: { increment_view: incrementView } }); setPost(response.data); } catch (error) { navigate('/'); } };
   const fetchComments = async () => { try { const response = await axios.get(`${BACKEND_URL}/posts/${id}/comments`, { params: { sort_by: commentSortBy } }); setComments(response.data); } catch (error) {} };
 
-  const handleLikePost = async () => { if (!currentUser) return alert("로그인해주세요."); try { await axios.post(`${BACKEND_URL}/posts/${id}/like`, {}, getAuthHeader()); fetchPostDetail(); } catch (error) {} };
+  const handleLikePost = async () => { if (!currentUser) return alert("로그인해주세요."); try { await axios.post(`${BACKEND_URL}/posts/${id}/like`, {}, getAuthHeader()); fetchPostDetail(false); } catch (error) {} };
   const handleLikeComment = async (commentId) => { if (!currentUser) return alert("로그인해주세요."); try { await axios.post(`${BACKEND_URL}/comments/${commentId}/like`, {}, getAuthHeader()); fetchComments(); } catch (error) {} };
 
   const handleAddComment = async () => {
@@ -52,7 +53,7 @@ function PostDetailPage({ currentUser }) {
 
   if (!post) return <PostDetailSpinner />;
   const isPostLiked = currentUser && post.좋아요누른사람들.includes(currentUser.nickname);
-  const canDeletePost = currentUser?.username === post.작성자아이디;
+  const canDeletePost = currentUser?.username === post.작성자아이디 || currentUser?.is_admin;
   const parentComments = comments.filter(c => c.부모댓글번호 === null);
   const childComments = comments.filter(c => c.부모댓글번호 !== null);
 
@@ -86,6 +87,7 @@ function PostDetailPage({ currentUser }) {
 
             <div className="mt-6 flex flex-wrap items-center gap-3 text-sm text-gray-500">
               <span>{post.작성시간}</span>
+              <span>조회 {post.조회수}</span>
             </div>
           </div>
 
@@ -117,7 +119,7 @@ function PostDetailPage({ currentUser }) {
         <div className="space-y-4 mb-24 lg:mb-0">
           {parentComments.map(parent => {
             const isParentLiked = currentUser && parent.좋아요누른사람들.includes(currentUser.nickname);
-            const canDeleteParent = currentUser?.username === parent.작성자아이디;
+            const canDeleteParent = currentUser?.username === parent.작성자아이디 || currentUser?.is_admin;
             const replies = childComments.filter(child => child.부모댓글번호 === parent.댓글번호);
             return (
               <div key={parent.댓글번호} className="space-y-2">
@@ -136,7 +138,7 @@ function PostDetailPage({ currentUser }) {
                   <div className="ml-4 space-y-2 border-l-2 border-blue-200 pl-3 sm:ml-8 sm:pl-4">
                     {replies.map(reply => {
                       const isReplyLiked = currentUser && reply.좋아요누른사람들.includes(currentUser.nickname);
-                      const canDeleteReply = currentUser?.username === reply.작성자아이디;
+                      const canDeleteReply = currentUser?.username === reply.작성자아이디 || currentUser?.is_admin;
                       return (
                         <div key={reply.댓글번호} className="relative rounded-2xl border border-gray-200 bg-white p-3 shadow-sm sm:p-4">
                           <span className="absolute -left-[16px] sm:-left-[20px] top-3 sm:top-4 text-blue-200 text-sm sm:text-base">↳</span>

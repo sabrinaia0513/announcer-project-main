@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Boolean, Date, UniqueConstraint
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Boolean, Date, UniqueConstraint, inspect, text
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime, timezone
@@ -43,6 +43,7 @@ class Post(Base):
     category = Column(String, default="자유", index=True)
     file_url = Column(String, nullable=True)
     like_count = Column(Integer, default=0)
+    view_count = Column(Integer, default=0)
 
     deadline = Column(Date, nullable=True)  
     external_link = Column(String, nullable=True) 
@@ -83,5 +84,19 @@ connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite")
 engine = create_engine(DATABASE_URL, connect_args=connect_args)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+
+def ensure_post_view_count_column():
+    inspector = inspect(engine)
+    if "posts" not in inspector.get_table_names():
+        return
+
+    post_columns = {column["name"] for column in inspector.get_columns("posts")}
+    if "view_count" in post_columns:
+        return
+
+    with engine.begin() as connection:
+        connection.execute(text("ALTER TABLE posts ADD COLUMN view_count INTEGER DEFAULT 0"))
+
 def create_tables():
     Base.metadata.create_all(bind=engine)
+    ensure_post_view_count_column()

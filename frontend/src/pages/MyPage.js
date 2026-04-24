@@ -48,7 +48,7 @@ function MyPage({ currentUser, setCurrentUser }) {
       const updatedUser = { ...currentUser, nickname: response.data.new_nickname };
       localStorage.setItem('announcer_user', JSON.stringify(updatedUser)); setCurrentUser(updatedUser);
       setNewNickname(''); setNewPassword('');
-    } catch (error) { alert("수정 실패."); }
+    } catch (error) { alert(error.response?.data?.detail || "수정 실패."); }
   };
 
   if (!currentUser) return null;

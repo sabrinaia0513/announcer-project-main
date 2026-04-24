@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { BACKEND_URL as API_URL, MEDIA_BASE_URL } from './lib/api';
+import { BACKEND_URL as API_URL, MEDIA_BASE_URL, getAuthHeader } from './lib/api';
 import { inputStyle } from './lib/utils';
 
 function ScriptBoard() {
@@ -10,6 +10,7 @@ function ScriptBoard() {
   const [content, setContent] = useState('');
   const [file, setFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [editingScript, setEditingScript] = useState(null);
   const navigate = useNavigate();
 
   const savedUser = localStorage.getItem('announcer_user');
@@ -18,12 +19,23 @@ function ScriptBoard() {
   const isAdmin = currentUser ? currentUser.is_admin : false;
 
   useEffect(() => {
+    if (!currentUser) {
+      navigate('/login');
+      return;
+    }
     fetchScripts();
-  }, []);
+  }, [currentUser, navigate]);
+
+  const resetForm = () => {
+    setTitle('');
+    setContent('');
+    setFile(null);
+    setEditingScript(null);
+  };
 
   const fetchScripts = async () => {
     try {
-      const response = await axios.get(`${API_URL}/scripts`);
+      const response = await axios.get(`${API_URL}/scripts`, getAuthHeader());
       setScripts(response.data);
     } catch (error) {
       console.error("대본을 불러오는 중 에러 발생:", error);
@@ -47,16 +59,22 @@ function ScriptBoard() {
     }
 
     try {
-      await axios.post(`${API_URL}/scripts`, formData, {
-        headers: { 
-          "Content-Type": "multipart/form-data",
-          "Authorization": `Bearer ${token}` 
-        }
-      });
-      alert("대본이 성공적으로 업로드되었습니다!");
-      setTitle('');
-      setContent('');
-      setFile(null);
+      const request = editingScript
+        ? axios.put(`${API_URL}/scripts/${editingScript.id}`, formData, {
+            headers: {
+              "Content-Type": "multipart/form-data",
+              "Authorization": `Bearer ${token}`
+            }
+          })
+        : axios.post(`${API_URL}/scripts`, formData, {
+            headers: {
+              "Content-Type": "multipart/form-data",
+              "Authorization": `Bearer ${token}`
+            }
+          });
+      await request;
+      alert(editingScript ? "대본이 수정되었습니다!" : "대본이 성공적으로 업로드되었습니다!");
+      resetForm();
       fetchScripts();
     } catch (error) {
       if (error.response && error.response.status === 403) {
@@ -68,6 +86,28 @@ function ScriptBoard() {
       }
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleEdit = (script) => {
+    setEditingScript(script);
+    setTitle(script.title);
+    setContent(script.content);
+    setFile(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDelete = async (scriptId) => {
+    if (!window.confirm('이 대본을 삭제하시겠습니까?')) return;
+    try {
+      await axios.delete(`${API_URL}/scripts/${scriptId}`, getAuthHeader());
+      alert('대본이 삭제되었습니다.');
+      if (editingScript?.id === scriptId) {
+        resetForm();
+      }
+      fetchScripts();
+    } catch (error) {
+      alert(error.response?.data?.detail || '대본 삭제 중 오류가 발생했습니다.');
     }
   };
 
@@ -113,7 +153,7 @@ function ScriptBoard() {
           {
             <>
               <div>
-                <h2 className="text-2xl font-black tracking-tight text-slate-900">관리자 업로드</h2>
+                <h2 className="text-2xl font-black tracking-tight text-slate-900">{editingScript ? '대본 수정' : '관리자 업로드'}</h2>
               </div>
 
               <form onSubmit={handleUpload} className="space-y-4">
@@ -145,11 +185,19 @@ function ScriptBoard() {
                     onChange={(e) => setFile(e.target.files[0])}
                     className="w-full text-sm text-slate-500 file:mr-4 file:rounded-full file:border-0 file:bg-sky-100 file:px-4 file:py-2 file:font-semibold file:text-sky-700 hover:file:bg-sky-200"
                   />
+                  {editingScript?.file_url && <p className="mt-2 text-xs text-slate-400">현재 첨부 파일이 있습니다. 새 파일을 선택하면 교체됩니다.</p>}
                   <p className="mt-2 text-xs text-slate-400">첨부가 없어도 본문만으로 등록할 수 있습니다.</p>
                 </div>
-                <button type="submit" disabled={isUploading} className={`w-full rounded-2xl px-5 py-4 text-sm font-bold text-white transition-all ${isUploading ? 'bg-slate-400' : 'bg-blue-600 hover:-translate-y-0.5 hover:bg-blue-700'}`}>
-                  {isUploading ? '등록 중...' : '대본 등록하기'}
-                </button>
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <button type="submit" disabled={isUploading} className={`w-full rounded-2xl px-5 py-4 text-sm font-bold text-white transition-all ${isUploading ? 'bg-slate-400' : 'bg-blue-600 hover:-translate-y-0.5 hover:bg-blue-700'}`}>
+                    {isUploading ? (editingScript ? '수정 중...' : '등록 중...') : (editingScript ? '대본 수정하기' : '대본 등록하기')}
+                  </button>
+                  {editingScript && (
+                    <button type="button" onClick={resetForm} className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-4 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50">
+                      취소
+                    </button>
+                  )}
+                </div>
               </form>
             </>
           }
@@ -184,6 +232,16 @@ function ScriptBoard() {
                 </div>
 
                 <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+                  {isAdmin && (
+                    <>
+                      <button onClick={() => handleEdit(script)} className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50">
+                        수정
+                      </button>
+                      <button onClick={() => handleDelete(script.id)} className="inline-flex items-center justify-center rounded-2xl bg-red-50 px-5 py-3 text-sm font-bold text-red-600 transition-colors hover:bg-red-100">
+                        삭제
+                      </button>
+                    </>
+                  )}
                   {script.file_url && (
                     <button
                       onClick={() => handleDownload(script.file_url, script.title)}

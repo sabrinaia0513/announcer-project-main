@@ -9,8 +9,7 @@ function Navbar({ currentUser, handleLogout, notifications, setNotifications }) 
   const currentUserLevel = currentUser?.is_admin ? '관리자' : currentUser?.level;
   const navItems = [
     { to: '/', label: '홈' },
-    { to: '/scripts', label: '대본 보관함' },
-    ...(currentUser ? [{ to: '/write', label: '글쓰기' }, { to: '/mypage', label: '마이페이지' }] : []),
+    ...(currentUser ? [{ to: '/scripts', label: '대본 보관함' }, { to: '/write', label: '글쓰기' }, { to: '/mypage', label: '마이페이지' }] : []),
   ];
 
   const navItemClassName = ({ isActive }) => (
@@ -112,7 +111,6 @@ function Navbar({ currentUser, handleLogout, notifications, setNotifications }) 
               <p className="mb-3 text-sm text-gray-500">커뮤니티의 모든 기능을 이용해보세요!</p>
               <div className="grid gap-2">
                 <NavLink to="/" end className={({ isActive }) => `w-full rounded-xl px-4 py-3 text-sm font-bold ${isActive ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700'}`}>홈</NavLink>
-                <NavLink to="/scripts" className={({ isActive }) => `w-full rounded-xl px-4 py-3 text-sm font-bold ${isActive ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700'}`}>대본 보관함</NavLink>
                 <Link to="/login" className="w-full rounded-xl bg-blue-600 py-3 text-center font-bold text-white shadow-sm">로그인 / 회원가입</Link>
               </div>
             </>
