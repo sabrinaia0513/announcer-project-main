@@ -81,9 +81,7 @@ function WritePostPage({ currentUser }) {
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <section className="rounded-[2rem] border border-gray-100 bg-white/90 p-6 shadow-sm backdrop-blur sm:p-8">
           <div className="mb-6 border-b border-gray-100 pb-6">
-            <p className="text-xs font-black tracking-[0.2em] text-slate-400">NEW POST</p>
-            <h1 className="mt-2 text-3xl font-black tracking-tight text-gray-900">✍️ 새 게시글 작성</h1>
-            <p className="mt-2 text-sm leading-6 text-slate-500">모바일에서는 한 흐름으로 작성하고, PC에서는 안내 패널과 입력 폼이 분리되어 더 여유롭게 보이도록 정리했습니다.</p>
+            <h1 className="text-3xl font-black tracking-tight text-gray-900">✍️ 새 게시글 작성</h1>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -131,8 +129,7 @@ function WritePostPage({ currentUser }) {
 
         <aside className="space-y-4 xl:sticky xl:top-28 xl:self-start">
           <div className="rounded-[2rem] border border-slate-200 bg-white/90 p-5 shadow-sm backdrop-blur">
-            <p className="text-xs font-black tracking-[0.2em] text-slate-400">WRITING GUIDE</p>
-            <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-900">작성 전에 체크할 것</h2>
+            <h2 className="text-2xl font-black tracking-tight text-slate-900">작성 전에 체크할 것</h2>
             <div className="mt-4 space-y-4 text-sm leading-6 text-slate-500">
               <p>카테고리에 맞는 제목을 붙이고, 본문 첫 문장에 핵심 요점을 먼저 쓰는 편이 읽기 좋습니다.</p>
               <p>공고 게시글은 마감일과 공식 링크를 같이 넣어야 신뢰도가 올라갑니다.</p>
@@ -141,8 +138,7 @@ function WritePostPage({ currentUser }) {
           </div>
 
           <div className="rounded-[2rem] border border-slate-200 bg-slate-900 p-5 text-white shadow-sm">
-            <p className="text-xs font-black tracking-[0.2em] text-slate-300">PREVIEW MODE</p>
-            <p className="mt-3 text-sm font-semibold text-slate-200">현재 선택한 카테고리</p>
+            <p className="text-sm font-semibold text-slate-200">현재 선택한 카테고리</p>
             <p className="mt-1 text-2xl font-black">{category}</p>
             <p className="mt-4 text-sm leading-6 text-slate-300">{category === '공고' ? '공고 모드에서는 링크와 마감일이 함께 들어갑니다.' : '일반 게시글 모드입니다. 자유롭게 내용을 작성할 수 있습니다.'}</p>
           </div>

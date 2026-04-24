@@ -96,34 +96,13 @@ function ScriptBoard() {
         <div className="relative overflow-hidden rounded-[2rem] bg-slate-900 px-6 py-7 text-white shadow-[0_24px_80px_-48px_rgba(15,23,42,0.9)] sm:px-8 xl:px-10">
           <div className="absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_top_right,_rgba(56,189,248,0.35),_transparent_55%)]" />
           <div className="relative z-10">
-            <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold tracking-[0.22em] text-sky-100">SCRIPT ARCHIVE</span>
-            <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
               <div>
                 <h1 className="text-3xl font-black tracking-tight sm:text-4xl">🎙️ 아나운서 대본 보관함</h1>
-                <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">매일 업데이트되는 훈련용 대본을 모바일에서는 빠르게 내려받고, PC에서는 목록과 업로드 흐름을 넓게 볼 수 있도록 정리했습니다.</p>
               </div>
               <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm text-slate-200 backdrop-blur">
-                <p className="text-[11px] uppercase tracking-[0.22em] text-slate-300">Archive Count</p>
+                <p className="text-[11px] tracking-[0.22em] text-slate-300">등록된 대본</p>
                 <p className="mt-1 text-3xl font-black text-white">{scripts.length}</p>
-                <p className="text-xs text-slate-300">현재 등록된 대본 수</p>
-              </div>
-            </div>
-
-            <div className="mt-6 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-[1.5rem] border border-white/10 bg-white/10 p-4 backdrop-blur">
-                <p className="text-[11px] font-black tracking-[0.2em] text-slate-300">ACCESS</p>
-                <p className="mt-2 text-lg font-black">{currentUser ? '로그인 상태' : '비회원 열람 가능'}</p>
-                <p className="mt-1 text-xs text-slate-300">원고 목록은 누구나 볼 수 있습니다.</p>
-              </div>
-              <div className="rounded-[1.5rem] border border-white/10 bg-white/10 p-4 backdrop-blur">
-                <p className="text-[11px] font-black tracking-[0.2em] text-slate-300">DOWNLOAD</p>
-                <p className="mt-2 text-lg font-black">원본 파일 지원</p>
-                <p className="mt-1 text-xs text-slate-300">첨부가 있으면 바로 다운로드할 수 있습니다.</p>
-              </div>
-              <div className="rounded-[1.5rem] border border-white/10 bg-white/10 p-4 backdrop-blur">
-                <p className="text-[11px] font-black tracking-[0.2em] text-slate-300">UPLOAD</p>
-                <p className="mt-2 text-lg font-black">{isAdmin ? '관리자 업로드 가능' : '관리자 전용 업로드'}</p>
-                <p className="mt-1 text-xs text-slate-300">운영자가 새 대본을 직접 보관함에 추가합니다.</p>
               </div>
             </div>
           </div>
@@ -133,9 +112,7 @@ function ScriptBoard() {
           {isAdmin ? (
             <>
               <div>
-                <p className="text-xs font-black tracking-[0.2em] text-slate-400">ADMIN DESK</p>
-                <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-900">관리자 전용 업로드</h2>
-                <p className="mt-2 text-sm leading-6 text-slate-500">PC에서는 고정 패널처럼 보이고, 모바일에서는 카드 하나로 자연스럽게 접히는 형태입니다.</p>
+                <h2 className="text-2xl font-black tracking-tight text-slate-900">관리자 업로드</h2>
               </div>
 
               <form onSubmit={handleUpload} className="space-y-4">
@@ -177,16 +154,10 @@ function ScriptBoard() {
           ) : (
             <>
               <div>
-                <p className="text-xs font-black tracking-[0.2em] text-slate-400">QUICK GUIDE</p>
-                <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-900">훈련용 원고를 둘러보세요</h2>
-                <p className="mt-2 text-sm leading-6 text-slate-500">필요한 원고를 내려받고, 최신 업로드된 자료를 빠르게 확인할 수 있습니다.</p>
+                <h2 className="text-2xl font-black tracking-tight text-slate-900">원고 보관함</h2>
               </div>
 
               <div className="space-y-3 rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5">
-                <div>
-                  <p className="text-sm font-bold text-slate-900">추천 사용 흐름</p>
-                  <p className="mt-2 text-sm text-slate-500">1. 제목으로 필요한 대본을 찾고 2. 첨부가 있으면 원본을 받고 3. 본문은 바로 읽으며 연습하면 됩니다.</p>
-                </div>
                 {!currentUser && (
                   <button onClick={() => navigate('/login')} className="w-full rounded-2xl bg-slate-900 px-5 py-4 text-sm font-bold text-white transition-colors hover:bg-slate-700">
                     로그인 / 회원가입
@@ -201,9 +172,7 @@ function ScriptBoard() {
       <section className="space-y-5">
         <div className="flex flex-col gap-2 rounded-[1.75rem] border border-slate-200 bg-white/85 px-5 py-5 shadow-sm backdrop-blur sm:flex-row sm:items-end sm:justify-between sm:px-6">
           <div>
-            <p className="text-xs font-black tracking-[0.2em] text-slate-400">ARCHIVE FEED</p>
-            <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-900">등록된 대본 목록</h2>
-            <p className="mt-1 text-sm text-slate-500">최신 업로드 순서로 정렬되며, 첨부가 있는 자료는 다운로드 버튼이 함께 노출됩니다.</p>
+            <h2 className="text-2xl font-black tracking-tight text-slate-900">등록된 대본 목록</h2>
           </div>
           <div className="rounded-full bg-slate-100 px-4 py-2 text-sm font-bold text-slate-600">총 {scripts.length}개</div>
         </div>
@@ -226,8 +195,7 @@ function ScriptBoard() {
                   <p className="whitespace-pre-wrap break-keep">{script.content}</p>
                 </div>
 
-                <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-xs text-slate-400">발성 연습이나 앵커 멘트 리딩에 바로 사용할 수 있습니다.</p>
+                <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
                   {script.file_url && (
                     <button
                       onClick={() => handleDownload(script.file_url, script.title)}

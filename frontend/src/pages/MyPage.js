@@ -57,8 +57,7 @@ function MyPage({ currentUser, setCurrentUser }) {
     <div className="mx-auto max-w-5xl rounded-[2rem] border border-gray-100 bg-white/90 p-5 shadow-sm backdrop-blur sm:p-8 lg:p-10">
       <div className="mb-8 flex flex-col gap-4 border-b border-gray-200 pb-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-xs font-black tracking-[0.2em] text-slate-400">MY SPACE</p>
-          <h2 className="mt-2 text-3xl font-extrabold text-gray-900">👤 마이페이지</h2>
+          <h2 className="text-3xl font-extrabold text-gray-900">👤 마이페이지</h2>
         </div>
         <button onClick={() => navigate('/')} className="inline-flex items-center justify-center rounded-full bg-slate-100 px-4 py-2 text-sm font-bold text-gray-600 transition-colors hover:bg-slate-200 hover:text-blue-600">메인으로 가기</button>
       </div>
@@ -80,12 +79,12 @@ function MyPage({ currentUser, setCurrentUser }) {
 
         <div className="grid grid-cols-2 gap-3 rounded-[2rem] border border-slate-200 bg-slate-50 p-5">
           <div className="rounded-2xl bg-white p-4 shadow-sm">
-            <p className="text-[11px] font-black tracking-[0.2em] text-slate-400">POSTS</p>
+            <p className="text-[11px] font-black tracking-[0.2em] text-slate-400">내 글</p>
             <p className="mt-2 text-2xl font-black text-slate-900">{activity.my_posts.length}</p>
             <p className="text-xs text-slate-500">내가 쓴 글</p>
           </div>
           <div className="rounded-2xl bg-white p-4 shadow-sm">
-            <p className="text-[11px] font-black tracking-[0.2em] text-slate-400">COMMENTS</p>
+            <p className="text-[11px] font-black tracking-[0.2em] text-slate-400">댓글</p>
             <p className="mt-2 text-2xl font-black text-slate-900">{activity.my_comments.length}</p>
             <p className="text-xs text-slate-500">작성한 댓글</p>
           </div>

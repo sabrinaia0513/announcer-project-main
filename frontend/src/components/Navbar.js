@@ -29,7 +29,6 @@ function Navbar({ currentUser, handleLogout, notifications, setNotifications }) 
           <img src={brandLogoSrc} alt="아우성" className="h-9 w-auto sm:h-11" />
           <div>
             <span className="block text-xl font-extrabold tracking-tight text-gray-900 sm:text-2xl">아우성</span>
-            <span className="hidden text-[11px] font-medium tracking-[0.24em] text-slate-400 sm:block">ANNOUNCER COMMUNITY</span>
           </div>
         </Link>
 

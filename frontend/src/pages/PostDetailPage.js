@@ -56,14 +56,13 @@ function PostDetailPage({ currentUser }) {
   const childComments = comments.filter(c => c.부모댓글번호 !== null);
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 pb-20 lg:pb-10">
+    <div className="mx-auto max-w-4xl space-y-6 pb-20 lg:pb-10">
       <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-sm font-bold text-gray-600 shadow-sm transition-colors hover:text-gray-900">
         <span>←</span>
         뒤로 가기
       </button>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_280px] xl:items-start">
-        <article className="rounded-[2rem] border border-slate-200 bg-white/90 p-5 shadow-sm backdrop-blur sm:p-8">
+      <article className="rounded-[2rem] border border-slate-200 bg-white/90 p-5 shadow-sm backdrop-blur sm:p-8">
           <div className="border-b border-gray-200 pb-8">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="min-w-0 flex-1">
@@ -85,7 +84,6 @@ function PostDetailPage({ currentUser }) {
             )}
 
             <div className="mt-6 flex flex-wrap items-center gap-3 text-sm text-gray-500">
-              <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 font-semibold text-slate-700"><span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-slate-500">{post.작성자등급}</span>{post.작성자}</span>
               <span>{post.작성시간}</span>
             </div>
           </div>
@@ -94,43 +92,23 @@ function PostDetailPage({ currentUser }) {
             {post.file_url && renderMedia(post.file_url)}
             <div className="min-h-[180px] whitespace-pre-wrap text-base leading-8 text-gray-800 break-keep sm:text-lg">{post.내용}</div>
           </div>
-        </article>
 
-        <aside className="space-y-4 xl:sticky xl:top-28">
-          <div className="rounded-[2rem] border border-slate-200 bg-white/90 p-5 shadow-sm backdrop-blur">
-            <p className="text-xs font-black tracking-[0.2em] text-slate-400">ARTICLE INFO</p>
-            <div className="mt-4 space-y-4">
-              <div>
-                <p className="text-xs font-bold text-slate-400">작성자</p>
-                <p className="mt-1 text-lg font-black text-slate-900">{post.작성자}</p>
-              </div>
-              <div>
-                <p className="text-xs font-bold text-slate-400">작성시간</p>
-                <p className="mt-1 text-sm font-semibold text-slate-700">{post.작성시간}</p>
-              </div>
-              <div>
-                <p className="text-xs font-bold text-slate-400">카테고리</p>
-                <p className="mt-1 text-sm font-semibold text-slate-700">{post.카테고리}</p>
-              </div>
-            </div>
+          <div className="mt-8 flex items-center justify-between gap-3 border-t border-slate-100 pt-5">
+            <div className="text-sm text-slate-500">좋아요 {post.좋아요수}</div>
+            <button onClick={handleLikePost} className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-bold transition-colors ${isPostLiked ? 'border-red-200 bg-red-50 text-red-600' : 'border-slate-200 bg-white text-slate-700 hover:border-red-200 hover:text-red-500'}`}>
+              <span>{isPostLiked ? '❤️' : '🤍'}</span>
+              추천하기
+            </button>
           </div>
-
-          <button onClick={handleLikePost} className={`flex w-full flex-col items-center rounded-[2rem] border-2 p-5 text-center transition-all hover:-translate-y-0.5 ${isPostLiked ? 'border-red-500 bg-red-50' : 'border-slate-200 bg-white/90 hover:border-red-300'}`}>
-            <span className="text-4xl">{isPostLiked ? '❤️' : '🤍'}</span>
-            <span className={`mt-2 text-lg font-black ${isPostLiked ? 'text-red-600' : 'text-slate-700'}`}>좋아요 {post.좋아요수}</span>
-            <span className="mt-1 text-sm text-slate-500">추천 버튼은 모바일과 PC 모두 같은 위치 규칙을 따릅니다.</span>
-          </button>
-        </aside>
-      </div>
+        </article>
 
       <section className="rounded-[2rem] border border-slate-200 bg-white/90 p-5 shadow-sm backdrop-blur sm:p-8">
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-xs font-black tracking-[0.2em] text-slate-400">COMMENTS</p>
-            <h3 className="mt-2 text-2xl font-black tracking-tight text-gray-800">댓글 {comments.length}개</h3>
+            <h3 className="text-2xl font-black tracking-tight text-gray-800">댓글 {comments.length}개</h3>
           </div>
           <div className="flex rounded-2xl bg-gray-100 p-1">
-            <button onClick={() => setCommentSortBy('latest')} className={`rounded-xl px-4 py-2 text-xs font-bold ${commentSortBy === 'latest' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500'}`}>과거순</button>
+            <button onClick={() => setCommentSortBy('latest')} className={`rounded-xl px-4 py-2 text-xs font-bold ${commentSortBy === 'latest' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500'}`}>최신순</button>
             <button onClick={() => setCommentSortBy('popular')} className={`rounded-xl px-4 py-2 text-xs font-bold ${commentSortBy === 'popular' ? 'bg-white text-red-500 shadow-sm' : 'text-gray-500'}`}>인기순🔥</button>
           </div>
         </div>
