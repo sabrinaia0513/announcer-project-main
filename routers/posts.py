@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session, joinedload, subqueryload
 
 import database
 from core.deps import get_db, get_current_user
-from core.security import get_user_level
+from core.security import format_datetime_kst, get_safe_external_link, get_user_level
 from schemas.schemas import PostCreate, PostUpdate
 from services.websocket import notifier
 
@@ -44,7 +44,7 @@ def get_announcements(db: Session = Depends(get_db)):
         .all()
     )
     return [
-        {"글번호": post.id, "제목": post.title, "마감일": str(post.deadline), "링크": post.external_link}
+        {"글번호": post.id, "제목": post.title, "마감일": str(post.deadline), "링크": get_safe_external_link(post.external_link)}
         for post in announcements
     ]
 
@@ -67,6 +67,8 @@ def get_posts(
         query = query.filter(
             database.Post.title.like(search_formatted) | database.Post.content.like(search_formatted)
         )
+    if sort_by == "popular":
+        query = query.filter(database.Post.like_count >= 5)
 
     total_count = query.count()
 
@@ -97,10 +99,10 @@ def get_posts(
                 "카테고리": post.category or "자유",
                 "file_url": post.file_url,
                 "deadline": str(post.deadline) if post.deadline else None,
-                "external_link": post.external_link,
+                "external_link": get_safe_external_link(post.external_link),
                 "작성자": post.author.nickname,
-                "작성자등급": get_user_level(post.author.points),
-                "작성시간": post.created_at.strftime("%Y-%m-%d %H:%M"),
+                "작성자등급": get_user_level(post.author.points, post.author.is_admin),
+                "작성시간": format_datetime_kst(post.created_at),
                 "좋아요수": len(post.likes),
                 "좋아요누른사람들": [like.user.nickname for like in post.likes],
             }
@@ -125,10 +127,10 @@ def get_post(post_id: int, db: Session = Depends(get_db)):
         "카테고리": post.category or "자유",
         "file_url": post.file_url,
         "deadline": str(post.deadline) if post.deadline else None,
-        "external_link": post.external_link,
+        "external_link": get_safe_external_link(post.external_link),
         "작성자": post.author.nickname,
-        "작성자등급": get_user_level(post.author.points),
-        "작성시간": post.created_at.strftime("%Y-%m-%d %H:%M"),
+        "작성자등급": get_user_level(post.author.points, post.author.is_admin),
+        "작성시간": format_datetime_kst(post.created_at),
         "좋아요수": len(post.likes),
         "좋아요누른사람들": [like.user.nickname for like in post.likes],
     }

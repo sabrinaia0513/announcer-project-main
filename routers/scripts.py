@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 import database
 from core.deps import get_db, get_current_user
 from core.config import MAX_FILE_SIZE, SCRIPT_ALLOWED_EXTENSIONS, UPLOAD_DIR
-from core.security import validate_file_extension
+from core.security import format_datetime_kst, validate_file_extension
 
 router = APIRouter(tags=["scripts"])
 
@@ -22,7 +22,7 @@ def get_scripts(db: Session = Depends(get_db)):
             "title": s.title,
             "content": s.content,
             "file_url": s.file_url,
-            "created_at": s.created_at.isoformat() if s.created_at else None,
+            "created_at": format_datetime_kst(s.created_at),
         }
         for s in scripts
     ]

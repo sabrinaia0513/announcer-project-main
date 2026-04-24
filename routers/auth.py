@@ -41,7 +41,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
         "token_type": "bearer",
         "nickname": user.nickname,
         "username": user.username,
-        "level": get_user_level(user.points),
+        "level": get_user_level(user.points, user.is_admin),
         "points": user.points,
         "is_admin": user.is_admin,
     }

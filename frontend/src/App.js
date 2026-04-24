@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { getAccessToken, WS_BACKEND_URL } from './lib/api';
 import Navbar from './components/Navbar';
-import ChatWidget from './components/ChatWidget';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import WritePostPage from './pages/WritePostPage';
@@ -74,6 +73,13 @@ function App() {
 
   return (
     <BrowserRouter>
+      <div className="min-h-screen bg-slate-100 text-gray-800">
+        <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+          <div className="absolute left-0 top-0 h-[28rem] w-[28rem] -translate-x-1/3 -translate-y-1/3 rounded-full bg-sky-200/50 blur-3xl" />
+          <div className="absolute right-0 top-24 h-[30rem] w-[30rem] translate-x-1/4 rounded-full bg-indigo-200/40 blur-3xl" />
+          <div className="absolute bottom-0 left-1/2 h-[24rem] w-[24rem] -translate-x-1/2 translate-y-1/3 rounded-full bg-white/70 blur-3xl" />
+        </div>
+
       <Navbar
         currentUser={currentUser}
         handleLogout={handleLogout}
@@ -81,10 +87,8 @@ function App() {
         setNotifications={setNotifications}
       />
 
-      <ChatWidget currentUser={currentUser} />
-
-      <div className="min-h-screen bg-gray-50 pt-24 pb-10 px-4 font-sans text-gray-800">
-        <div className="max-w-3xl mx-auto">
+      <main className="pb-12 pt-24 sm:pt-28 xl:pt-32">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 xl:px-8">
           <Routes>
             <Route path="/" element={<HomePage currentUser={currentUser} />} />
             <Route path="/login" element={<LoginPage setCurrentUser={setCurrentUser} />} />
@@ -95,6 +99,7 @@ function App() {
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </div>
+      </main>
       </div>
     </BrowserRouter>
   );

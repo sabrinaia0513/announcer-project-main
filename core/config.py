@@ -35,7 +35,7 @@ ALLOWED_ORIGINS = [
     "https://www.annausung.com",
     "https://announcer-project-main.vercel.app" # Vercel 주소도 잊지 말고 넣어주세요!
 ]
-INITIAL_ADMIN_USERNAMES = set(_parse_csv_env("INITIAL_ADMIN_USERNAMES", "sabrinaia"))
+INITIAL_ADMIN_USERNAMES = set(_parse_csv_env("INITIAL_ADMIN_USERNAMES", ""))
 API_PREFIX = _normalize_path_prefix(os.environ.get("API_PREFIX", ""))
 
 DATABASE_URL = os.environ.get("DATABASE_URL", f"sqlite:///{(BASE_DIR / 'community.db').as_posix()}")

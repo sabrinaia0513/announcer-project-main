@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session, joinedload
 import database
 import auth
 from core.deps import get_db, get_current_user
-from core.security import get_user_level
+from core.security import format_datetime_kst, get_user_level
 from schemas.schemas import UserUpdateInfo
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -16,11 +16,11 @@ def get_user_activity(
     db: Session = Depends(get_db),
 ):
     my_posts = [
-        {"글번호": p.id, "제목": p.title, "작성시간": p.created_at.strftime("%Y-%m-%d %H:%M")}
+        {"글번호": p.id, "제목": p.title, "작성시간": format_datetime_kst(p.created_at)}
         for p in current_user.posts
     ]
     my_comments = [
-        {"댓글번호": c.id, "내용": c.content, "원문번호": c.post_id, "작성시간": c.created_at.strftime("%Y-%m-%d %H:%M")}
+        {"댓글번호": c.id, "내용": c.content, "원문번호": c.post_id, "작성시간": format_datetime_kst(c.created_at)}
         for c in current_user.comments
     ]
     liked_post_records = (
@@ -36,7 +36,7 @@ def get_user_activity(
     return {
         "nickname": current_user.nickname,
         "points": current_user.points,
-        "level": get_user_level(current_user.points),
+        "level": get_user_level(current_user.points, current_user.is_admin),
         "my_posts": my_posts[::-1],
         "my_comments": my_comments[::-1],
         "liked_posts": liked_posts[::-1],

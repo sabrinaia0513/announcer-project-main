@@ -1,7 +1,7 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from core.security import verify_ws_token
-from services.websocket import notifier, chat_manager
+from services.websocket import notifier
 
 router = APIRouter(tags=["websocket"])
 
@@ -23,14 +23,3 @@ async def websocket_notify(websocket: WebSocket, username: str):
             await websocket.receive_text()
     except WebSocketDisconnect:
         notifier.disconnect(username)
-
-
-@router.websocket("/ws/chat")
-async def websocket_chat(websocket: WebSocket):
-    await chat_manager.connect(websocket)
-    try:
-        while True:
-            data = await websocket.receive_text()
-            await chat_manager.broadcast(data)
-    except WebSocketDisconnect:
-        chat_manager.disconnect(websocket)

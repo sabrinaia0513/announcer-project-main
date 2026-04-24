@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session, joinedload, subqueryload
 
 import database
 from core.deps import get_db, get_current_user
-from core.security import get_user_level
+from core.security import format_datetime_kst, get_user_level
 from schemas.schemas import CommentCreate, CommentUpdate
 from services.websocket import notifier
 
@@ -71,8 +71,8 @@ def get_comments(post_id: int, sort_by: str = "latest", db: Session = Depends(ge
                 "댓글번호": c.id,
                 "내용": c.content,
                 "작성자": c.author.nickname,
-                "작성자등급": get_user_level(c.author.points),
-                "작성시간": c.created_at.strftime("%Y-%m-%d %H:%M"),
+                "작성자등급": get_user_level(c.author.points, c.author.is_admin),
+                "작성시간": format_datetime_kst(c.created_at),
                 "좋아요수": len(c.likes),
                 "좋아요누른사람들": [like.user.nickname for like in c.likes],
                 "부모댓글번호": c.parent_id,
