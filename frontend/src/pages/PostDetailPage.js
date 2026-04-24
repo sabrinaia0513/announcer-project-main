@@ -52,6 +52,7 @@ function PostDetailPage({ currentUser }) {
 
   if (!post) return <PostDetailSpinner />;
   const isPostLiked = currentUser && post.좋아요누른사람들.includes(currentUser.nickname);
+  const canDeletePost = currentUser?.username === post.작성자아이디;
   const parentComments = comments.filter(c => c.부모댓글번호 === null);
   const childComments = comments.filter(c => c.부모댓글번호 !== null);
 
@@ -69,7 +70,7 @@ function PostDetailPage({ currentUser }) {
                 <span className="mb-4 inline-flex rounded-full bg-indigo-100 px-3 py-1 text-[11px] font-extrabold text-indigo-700">{post.카테고리}</span>
                 <h1 className="text-3xl font-black tracking-tight text-gray-900 break-keep sm:text-4xl">{post.제목}</h1>
               </div>
-              {(currentUser && (currentUser.nickname === post.작성자 || currentUser.is_admin)) && <button onClick={handleDeletePost} className="rounded-full bg-red-50 px-4 py-2 text-xs font-bold text-red-500 transition-colors hover:bg-red-100">삭제</button>}
+              {canDeletePost && <button onClick={handleDeletePost} className="rounded-full bg-red-50 px-4 py-2 text-xs font-bold text-red-500 transition-colors hover:bg-red-100">삭제</button>}
             </div>
 
             {post.카테고리 === '공고' && post.deadline && (
@@ -116,13 +117,14 @@ function PostDetailPage({ currentUser }) {
         <div className="space-y-4 mb-24 lg:mb-0">
           {parentComments.map(parent => {
             const isParentLiked = currentUser && parent.좋아요누른사람들.includes(currentUser.nickname);
+            const canDeleteParent = currentUser?.username === parent.작성자아이디;
             const replies = childComments.filter(child => child.부모댓글번호 === parent.댓글번호);
             return (
               <div key={parent.댓글번호} className="space-y-2">
                 <div className="rounded-[1.5rem] border border-gray-100 bg-gray-50 p-4 sm:p-5">
                   <div className="flex justify-between mb-2">
                     <div className="flex items-center gap-2"><span className="flex items-center gap-1 text-sm font-bold text-gray-800"><span className="rounded-full bg-gray-200 px-2 py-0.5 text-[10px]">{parent.작성자등급}</span>{parent.작성자}</span><span className="text-[10px] text-gray-400">{parent.작성시간}</span></div>
-                    {(currentUser && (currentUser.nickname === parent.작성자 || currentUser.is_admin)) && <button onClick={() => handleDeleteComment(parent.댓글번호)} className="text-[10px] font-bold text-red-400 hover:text-red-600">삭제</button>}
+                    {canDeleteParent && <button onClick={() => handleDeleteComment(parent.댓글번호)} className="text-[10px] font-bold text-red-400 hover:text-red-600">삭제</button>}
                   </div>
                   <p className="text-gray-800 mb-3 text-sm sm:text-base break-keep">{parent.내용}</p>
                   <div className="flex gap-4 items-center">
@@ -134,12 +136,13 @@ function PostDetailPage({ currentUser }) {
                   <div className="ml-4 space-y-2 border-l-2 border-blue-200 pl-3 sm:ml-8 sm:pl-4">
                     {replies.map(reply => {
                       const isReplyLiked = currentUser && reply.좋아요누른사람들.includes(currentUser.nickname);
+                      const canDeleteReply = currentUser?.username === reply.작성자아이디;
                       return (
                         <div key={reply.댓글번호} className="relative rounded-2xl border border-gray-200 bg-white p-3 shadow-sm sm:p-4">
                           <span className="absolute -left-[16px] sm:-left-[20px] top-3 sm:top-4 text-blue-200 text-sm sm:text-base">↳</span>
                           <div className="flex justify-between mb-1">
                             <div className="flex items-center gap-2"><span className="flex items-center gap-1 text-xs font-bold text-gray-800"><span className="rounded-full bg-gray-200 px-2 py-0.5 text-[8px] sm:text-[10px]">{reply.작성자등급}</span>{reply.작성자}</span><span className="text-[10px] text-gray-400">{reply.작성시간}</span></div>
-                            {(currentUser && (currentUser.nickname === reply.작성자 || currentUser.is_admin)) && <button onClick={() => handleDeleteComment(reply.댓글번호)} className="text-[10px] text-red-400 hover:text-red-600">삭제</button>}
+                            {canDeleteReply && <button onClick={() => handleDeleteComment(reply.댓글번호)} className="text-[10px] text-red-400 hover:text-red-600">삭제</button>}
                           </div>
                           <p className="text-gray-700 text-xs sm:text-sm mb-2 break-keep">{reply.내용}</p>
                           <button onClick={() => handleLikeComment(reply.댓글번호)} className={`flex items-center gap-1 text-[10px] sm:text-xs font-bold ${isReplyLiked ? 'text-red-500' : 'text-gray-400'}`}><span>{isReplyLiked ? '❤️' : '🤍'}</span><span>{reply.좋아요수}</span></button>

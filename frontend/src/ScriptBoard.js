@@ -92,7 +92,7 @@ function ScriptBoard() {
 
   return (
     <div className="space-y-8 xl:space-y-10">
-      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.65fr)_360px]">
+      <section className={`grid gap-6 ${isAdmin ? 'xl:grid-cols-[minmax(0,1.65fr)_360px]' : ''}`}>
         <div className="relative overflow-hidden rounded-[2rem] bg-slate-900 px-6 py-7 text-white shadow-[0_24px_80px_-48px_rgba(15,23,42,0.9)] sm:px-8 xl:px-10">
           <div className="absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_top_right,_rgba(56,189,248,0.35),_transparent_55%)]" />
           <div className="relative z-10">
@@ -108,8 +108,9 @@ function ScriptBoard() {
           </div>
         </div>
 
+        {isAdmin && (
         <aside className="space-y-4 rounded-[2rem] border border-slate-200 bg-white/90 p-6 shadow-sm backdrop-blur sm:p-7">
-          {isAdmin ? (
+          {
             <>
               <div>
                 <h2 className="text-2xl font-black tracking-tight text-slate-900">관리자 업로드</h2>
@@ -151,22 +152,9 @@ function ScriptBoard() {
                 </button>
               </form>
             </>
-          ) : (
-            <>
-              <div>
-                <h2 className="text-2xl font-black tracking-tight text-slate-900">원고 보관함</h2>
-              </div>
-
-              <div className="space-y-3 rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5">
-                {!currentUser && (
-                  <button onClick={() => navigate('/login')} className="w-full rounded-2xl bg-slate-900 px-5 py-4 text-sm font-bold text-white transition-colors hover:bg-slate-700">
-                    로그인 / 회원가입
-                  </button>
-                )}
-              </div>
-            </>
-          )}
+          }
         </aside>
+        )}
       </section>
 
       <section className="space-y-5">

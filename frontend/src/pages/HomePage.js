@@ -196,9 +196,9 @@ function HomePage({ currentUser }) {
                 <button onClick={() => { setSortBy('popular'); setCurrentPage(1); }} className={`rounded-xl px-4 py-2 text-xs font-bold sm:text-sm ${sortBy === 'popular' ? 'bg-white text-red-500 shadow-sm' : 'text-slate-500'}`}>핫게시판</button>
               </div>
 
-              <form onSubmit={(event) => { event.preventDefault(); setSearchKeyword(searchInput); setCurrentPage(1); }} className="flex w-full gap-2 lg:max-w-xl lg:ml-auto">
+              <form onSubmit={(event) => { event.preventDefault(); setSearchKeyword(searchInput); setCurrentPage(1); }} className="flex w-full items-center gap-2 lg:ml-auto lg:max-w-xl">
                 <input type="text" placeholder="검색어를 입력하세요" value={searchInput} onChange={(event) => setSearchInput(event.target.value)} className={`${inputStyle} py-3`} />
-                <button type="submit" className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-slate-700">검색</button>
+                <button type="submit" className="shrink-0 whitespace-nowrap rounded-2xl bg-slate-900 px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-slate-700">검색</button>
               </form>
             </div>
           </div>

@@ -43,7 +43,7 @@ function LoginPage({ setCurrentUser }) {
       await axios.post(`${BACKEND_URL}/signup`, { username: loginId, nickname, password: loginPw });
       alert(`${nickname}님, 가입 완료! 이제 로그인해주세요.`);
       setNickname(''); setLoginPw(''); setIsLoginMode(true);
-    } catch (error) { alert("가입 실패: 이미 존재하는 아이디입니다."); }
+    } catch (error) { alert("가입 실패: " + (error.response?.data?.detail || "회원가입 중 오류가 발생했습니다.")); }
   };
 
   return (

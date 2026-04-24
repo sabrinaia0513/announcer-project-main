@@ -71,6 +71,7 @@ def get_comments(post_id: int, sort_by: str = "latest", db: Session = Depends(ge
                 "댓글번호": c.id,
                 "내용": c.content,
                 "작성자": c.author.nickname,
+                "작성자아이디": c.author.username,
                 "작성자등급": get_user_level(c.author.points, c.author.is_admin),
                 "작성시간": format_datetime_kst(c.created_at),
                 "좋아요수": len(c.likes),

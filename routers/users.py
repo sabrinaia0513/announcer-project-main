@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
 
 import database
@@ -50,6 +50,13 @@ def update_user_info(
     db: Session = Depends(get_db),
 ):
     if update_data.new_nickname:
+        existing_nickname = (
+            db.query(database.User)
+            .filter(database.User.nickname == update_data.new_nickname, database.User.id != current_user.id)
+            .first()
+        )
+        if existing_nickname:
+            raise HTTPException(status_code=400, detail="이미 사용 중인 닉네임입니다.")
         current_user.nickname = update_data.new_nickname
     if update_data.new_password:
         current_user.hashed_password = auth.get_password_hash(update_data.new_password)

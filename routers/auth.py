@@ -18,6 +18,9 @@ def signup(user_data: UserCreate, db: Session = Depends(get_db)):
     existing_user = db.query(database.User).filter(database.User.username == user_data.username).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="이미 존재하는 아이디입니다.")
+    existing_nickname = db.query(database.User).filter(database.User.nickname == user_data.nickname).first()
+    if existing_nickname:
+        raise HTTPException(status_code=400, detail="이미 사용 중인 닉네임입니다.")
     hashed_pw = auth.get_password_hash(user_data.password)
     new_user = database.User(username=user_data.username, nickname=user_data.nickname, hashed_password=hashed_pw, points=0)
     db.add(new_user)
