@@ -109,13 +109,6 @@ function WritePostPage({ currentUser }) {
               </div>
             )}
 
-            {category === '중고거래' && (
-              <div className="rounded-[1.5rem] border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
-                <p className="font-extrabold">중고거래 작성 템플릿</p>
-                <p className="mt-2 whitespace-pre-wrap leading-6">상품명\n상태\n사용 기간\n희망 가격\n거래 지역\n거래 방법</p>
-              </div>
-            )}
-
             <div>
               <label className="mb-2 block text-sm font-bold text-gray-700">내용</label>
               <textarea placeholder={getPostContentPlaceholder(category)} value={content} onChange={(e) => setContent(e.target.value)} required rows="10" className={`${inputStyle} resize-none whitespace-pre-wrap`} />
