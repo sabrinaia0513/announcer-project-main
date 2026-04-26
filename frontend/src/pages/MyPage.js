@@ -68,7 +68,6 @@ function MyPage({ currentUser, setCurrentUser }) {
             <div>
               <p className="text-xs font-bold text-blue-100">나의 커뮤니티 등급</p>
               <h3 className="mt-2 text-3xl font-extrabold sm:text-4xl">{activity.level}</h3>
-              <p className="mt-3 text-sm text-blue-100">프로필, 활동, 관리자 권한을 한 곳에서 관리합니다.</p>
             </div>
             <div className="rounded-2xl bg-white/15 px-5 py-4 text-right backdrop-blur">
               <p className="text-xs font-bold text-blue-100">현재 포인트</p>

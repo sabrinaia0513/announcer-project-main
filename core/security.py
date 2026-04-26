@@ -23,16 +23,16 @@ def verify_ws_token(token: str) -> Optional[str]:
 def get_user_level(points: int, is_admin: bool = False) -> str:
     if is_admin:
         return "관리자"
-    if points < 50:
+    if points < 100:
         return "🌱 씨앗"
-    elif points < 150:
+    elif points <  500:
         return "🌿 새싹"
-    elif points < 300:
+    elif points < 5000:
         return "🍀 잎새"
-    elif points < 500:
+    elif points < 10000:
         return "🌳 나무"
     else:
-        return "👑 열매"
+        return "👑 숲"
 
 
 def normalize_external_link(url: Optional[str]) -> Optional[str]:
