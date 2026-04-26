@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { BACKEND_URL as API_URL, MEDIA_BASE_URL, getAuthHeader } from './lib/api';
+import { BACKEND_URL as API_URL, downloadScriptById, getAuthHeader } from './lib/api';
 import { inputStyle } from './lib/utils';
 
 function ScriptBoard() {
@@ -111,20 +111,11 @@ function ScriptBoard() {
     }
   };
 
-  const handleDownload = async (fileUrl, scriptTitle) => {
+  const handleDownload = async (script) => {
     try {
-      const fileRes = await axios.get(`${MEDIA_BASE_URL}${fileUrl}`, { responseType: 'blob' });
-      const url = window.URL.createObjectURL(new Blob([fileRes.data]));
-      const ext = fileUrl.split('.').pop(); 
-      const cleanTitle = scriptTitle.replace(/[/\\?%*:|"<>]/g, '_');
-
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `[대본]_${cleanTitle}.${ext}`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
+      const cleanTitle = script.title.replace(/[/\\?%*:|"<>]/g, '_');
+      const ext = script.file_url ? script.file_url.split('.').pop() : 'txt';
+      await downloadScriptById(script.id, `[대본]_${cleanTitle}.${ext}`);
     } catch (error) {
       alert("파일 다운로드 중 오류가 발생했습니다.");
     }
@@ -223,6 +214,7 @@ function ScriptBoard() {
                   <div className="min-w-0 flex-1">
                     <h3 className="text-xl font-black tracking-tight text-slate-900">{script.title}</h3>
                     <p className="mt-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">업로드 시각 {script.created_at || '정보 없음'}</p>
+                    {isAdmin && <p className="mt-2 text-sm font-bold text-slate-500">다운로드 {script.download_count || 0}회</p>}
                   </div>
                   {script.file_url && <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-bold text-emerald-600">첨부 파일 있음</span>}
                 </div>
@@ -244,7 +236,7 @@ function ScriptBoard() {
                   )}
                   {script.file_url && (
                     <button
-                      onClick={() => handleDownload(script.file_url, script.title)}
+                      onClick={() => handleDownload(script)}
                       className="inline-flex items-center justify-center rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-emerald-700"
                     >
                       원본 파일 다운로드

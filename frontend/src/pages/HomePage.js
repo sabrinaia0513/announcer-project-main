@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { BACKEND_URL, MEDIA_BASE_URL, getAuthHeader } from '../lib/api';
+import { BACKEND_URL, downloadScriptById, getAuthHeader } from '../lib/api';
 import { CATEGORIES, POSTS_PER_PAGE, MAX_PAGE_BUTTONS, inputStyle, calculateDday, getCategoryBadgeClass } from '../lib/utils';
 
 function HomePage({ currentUser }) {
@@ -62,32 +62,8 @@ function HomePage({ currentUser }) {
 
       const latestScript = response.data[0];
       const cleanTitle = latestScript.title.replace(/[/\\?%*:|"<>]/g, '_');
-
-      if (latestScript.file_url) {
-        const fileRes = await axios.get(`${MEDIA_BASE_URL}${latestScript.file_url}`, { responseType: 'blob' });
-        const url = window.URL.createObjectURL(new Blob([fileRes.data]));
-        const ext = latestScript.file_url.split('.').pop();
-
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', `[오늘의대본]_${cleanTitle}.${ext}`);
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        window.URL.revokeObjectURL(url);
-      } else {
-        const textContent = `제목: ${latestScript.title}\n\n${latestScript.content}`;
-        const blob = new Blob([textContent], { type: 'text/plain;charset=utf-8' });
-        const url = window.URL.createObjectURL(blob);
-
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', `[오늘의대본]_${cleanTitle}.txt`);
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        window.URL.revokeObjectURL(url);
-      }
+      const ext = latestScript.file_url ? latestScript.file_url.split('.').pop() : 'txt';
+      await downloadScriptById(latestScript.id, `[오늘의대본]_${cleanTitle}.${ext}`);
     } catch (error) {
       alert('대본 다운로드 중 오류가 발생했습니다.');
     } finally {

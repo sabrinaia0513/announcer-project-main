@@ -1,8 +1,10 @@
 import os
 import shutil
 import uuid
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from fastapi.responses import FileResponse, Response
 from sqlalchemy.orm import Session
 
 import database
@@ -13,12 +15,39 @@ from core.security import format_datetime_kst, validate_file_extension
 router = APIRouter(tags=["scripts"])
 
 
+def build_download_headers(filename: str):
+    quoted_filename = quote(filename)
+    return {
+        "Content-Disposition": f"attachment; filename*=UTF-8''{quoted_filename}"
+    }
+
+
+def get_script_file_path(file_url: str | None):
+    if not file_url:
+        return None
+
+    filename = file_url.replace("/uploads/", "", 1)
+    return os.path.join(UPLOAD_DIR, filename)
+
+
+def build_script_payload(script: database.Script, include_download_count: bool = False):
+    payload = {
+        "id": script.id,
+        "title": script.title,
+        "content": script.content,
+        "file_url": script.file_url,
+        "created_at": format_datetime_kst(script.created_at),
+    }
+    if include_download_count:
+        payload["download_count"] = script.download_count or 0
+    return payload
+
+
 def remove_script_file(file_url: str | None):
     if not file_url:
         return
 
-    filename = file_url.replace("/uploads/", "", 1)
-    file_path = os.path.join(UPLOAD_DIR, filename)
+    file_path = get_script_file_path(file_url)
     if os.path.exists(file_path):
         os.remove(file_path)
 
@@ -50,16 +79,47 @@ def get_scripts(
     db: Session = Depends(get_db),
 ):
     scripts = db.query(database.Script).order_by(database.Script.created_at.desc()).all()
-    return [
-        {
-            "id": s.id,
-            "title": s.title,
-            "content": s.content,
-            "file_url": s.file_url,
-            "created_at": format_datetime_kst(s.created_at),
-        }
-        for s in scripts
-    ]
+    return [build_script_payload(s, include_download_count=current_user.is_admin) for s in scripts]
+
+
+@router.get("/scripts/{script_id}/download")
+def download_script(
+    script_id: int,
+    current_user: database.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    script = db.query(database.Script).filter(database.Script.id == script_id).first()
+    if not script:
+        raise HTTPException(status_code=404, detail="대본을 찾을 수 없습니다.")
+
+    safe_title = "".join("_" if char in '/\\?%*:|\"<>' else char for char in script.title).strip() or "script"
+
+    if script.file_url:
+        file_path = get_script_file_path(script.file_url)
+        if not file_path or not os.path.exists(file_path):
+            raise HTTPException(status_code=404, detail="첨부 파일을 찾을 수 없습니다.")
+
+        script.download_count = (script.download_count or 0) + 1
+        db.commit()
+
+        ext = os.path.splitext(file_path)[1] or ".bin"
+        filename = f"[대본]_{safe_title}{ext}"
+        return FileResponse(
+            file_path,
+            media_type="application/octet-stream",
+            headers=build_download_headers(filename),
+        )
+
+    script.download_count = (script.download_count or 0) + 1
+    db.commit()
+
+    text_content = f"제목: {script.title}\n\n{script.content}"
+    filename = f"[대본]_{safe_title}.txt"
+    return Response(
+        content=text_content.encode("utf-8"),
+        media_type="text/plain; charset=utf-8",
+        headers=build_download_headers(filename),
+    )
 
 
 @router.post("/scripts")

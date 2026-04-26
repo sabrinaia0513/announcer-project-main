@@ -47,4 +47,34 @@ export const getAccessToken = () => {
   return JSON.parse(savedUser).access_token;
 };
 
+const parseDownloadFilename = (contentDisposition) => {
+  if (!contentDisposition) return null;
+
+  const utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utf8Match) {
+    return decodeURIComponent(utf8Match[1]);
+  }
+
+  const plainMatch = contentDisposition.match(/filename="?([^\"]+)"?/i);
+  return plainMatch ? plainMatch[1] : null;
+};
+
+export const downloadScriptById = async (scriptId, fallbackFilename = 'script.txt') => {
+  const response = await axios.get(`${BACKEND_URL}/scripts/${scriptId}/download`, {
+    ...getAuthHeader(),
+    responseType: 'blob',
+  });
+
+  const blobUrl = window.URL.createObjectURL(response.data);
+  const filename = parseDownloadFilename(response.headers['content-disposition']) || fallbackFilename;
+  const link = document.createElement('a');
+
+  link.href = blobUrl;
+  link.setAttribute('download', filename);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(blobUrl);
+};
+
 export default axios;

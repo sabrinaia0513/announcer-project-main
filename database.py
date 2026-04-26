@@ -73,6 +73,7 @@ class Script(Base):
     title = Column(String, index=True)       
     content = Column(Text)                   
     file_url = Column(String, nullable=True) 
+    download_count = Column(Integer, default=0)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc)) 
 
 from sqlalchemy import create_engine
@@ -97,6 +98,20 @@ def ensure_post_view_count_column():
     with engine.begin() as connection:
         connection.execute(text("ALTER TABLE posts ADD COLUMN view_count INTEGER DEFAULT 0"))
 
+
+def ensure_script_download_count_column():
+    inspector = inspect(engine)
+    if "scripts" not in inspector.get_table_names():
+        return
+
+    script_columns = {column["name"] for column in inspector.get_columns("scripts")}
+    if "download_count" in script_columns:
+        return
+
+    with engine.begin() as connection:
+        connection.execute(text("ALTER TABLE scripts ADD COLUMN download_count INTEGER DEFAULT 0"))
+
 def create_tables():
     Base.metadata.create_all(bind=engine)
     ensure_post_view_count_column()
+    ensure_script_download_count_column()
