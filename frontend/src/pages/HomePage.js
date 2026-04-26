@@ -139,7 +139,7 @@ function HomePage({ currentUser }) {
       <section className="rounded-[1.75rem] border border-slate-200 bg-white/90 px-5 py-5 shadow-sm backdrop-blur sm:px-6 sm:py-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl">원고 보관함</h2>
+            <h2 className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl">오늘의 원고</h2>
           </div>
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
             <button
@@ -150,7 +150,7 @@ function HomePage({ currentUser }) {
               {currentUser ? (isDownloading ? '다운로드 준비 중...' : '오늘의 원고 다운로드') : '로그인 후 원고 받기'}
             </button>
             <button onClick={() => navigate(currentUser ? '/scripts' : '/login')} className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50">
-              원고 보관함 보기
+              원고 보관함
             </button>
           </div>
         </div>
