@@ -193,7 +193,7 @@ function HomePage({ currentUser }) {
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
               <div className="flex self-start rounded-2xl bg-slate-100 p-1">
                 <button onClick={() => { setSortBy('latest'); setCurrentPage(1); }} className={`rounded-xl px-4 py-2 text-xs font-bold sm:text-sm ${sortBy === 'latest' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}>최신순</button>
-                <button onClick={() => { setSortBy('popular'); setCurrentPage(1); }} className={`rounded-xl px-4 py-2 text-xs font-bold sm:text-sm ${sortBy === 'popular' ? 'bg-white text-red-500 shadow-sm' : 'text-slate-500'}`}>핫게시판</button>
+                <button onClick={() => { setSortBy('popular'); setCurrentPage(1); }} className={`rounded-xl px-4 py-2 text-xs font-bold sm:text-sm ${sortBy === 'popular' ? 'bg-white text-red-500 shadow-sm' : 'text-slate-500'}`}>인기글</button>
               </div>
 
               <form onSubmit={(event) => { event.preventDefault(); setSearchKeyword(searchInput); setCurrentPage(1); }} className="flex w-full items-center gap-2 lg:ml-auto lg:max-w-xl">
