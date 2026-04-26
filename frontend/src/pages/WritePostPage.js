@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { BACKEND_URL, getAuthHeader } from '../lib/api';
-import { CATEGORIES, inputStyle } from '../lib/utils';
+import { CATEGORIES, getPostContentPlaceholder, inputStyle } from '../lib/utils';
 
 const isValidExternalLink = (value) => {
   try {
@@ -109,9 +109,16 @@ function WritePostPage({ currentUser }) {
               </div>
             )}
 
+            {category === '중고거래' && (
+              <div className="rounded-[1.5rem] border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
+                <p className="font-extrabold">중고거래 작성 템플릿</p>
+                <p className="mt-2 whitespace-pre-wrap leading-6">상품명\n상태\n사용 기간\n희망 가격\n거래 지역\n거래 방법</p>
+              </div>
+            )}
+
             <div>
               <label className="mb-2 block text-sm font-bold text-gray-700">내용</label>
-              <textarea placeholder="내용을 자유롭게 남겨주세요" value={content} onChange={(e) => setContent(e.target.value)} required rows="10" className={`${inputStyle} resize-none`} />
+              <textarea placeholder={getPostContentPlaceholder(category)} value={content} onChange={(e) => setContent(e.target.value)} required rows="10" className={`${inputStyle} resize-none whitespace-pre-wrap`} />
             </div>
 
             <div className="rounded-[1.5rem] border border-gray-200 bg-gray-50 p-4">
@@ -133,6 +140,7 @@ function WritePostPage({ currentUser }) {
             <div className="mt-4 space-y-4 text-sm leading-6 text-slate-500">
               <p>카테고리에 맞는 제목을 붙이고, 본문 첫 문장에 핵심 요점을 먼저 쓰는 편이 읽기 좋습니다.</p>
               <p>공고 게시글은 마감일과 공식 링크를 같이 넣어야 신뢰도가 올라갑니다.</p>
+              <p>중고거래 게시글은 상태, 사용 기간, 희망 가격, 거래 지역을 함께 적으면 확인이 빠릅니다.</p>
               <p>첨부 파일은 이미지, 오디오, 비디오만 업로드할 수 있습니다.</p>
             </div>
           </div>
@@ -140,7 +148,7 @@ function WritePostPage({ currentUser }) {
           <div className="rounded-[2rem] border border-slate-200 bg-slate-900 p-5 text-white shadow-sm">
             <p className="text-sm font-semibold text-slate-200">현재 선택한 카테고리</p>
             <p className="mt-1 text-2xl font-black">{category}</p>
-            <p className="mt-4 text-sm leading-6 text-slate-300">{category === '공고' ? '공고 모드에서는 링크와 마감일이 함께 들어갑니다.' : '일반 게시글 모드입니다. 자유롭게 내용을 작성할 수 있습니다.'}</p>
+            <p className="mt-4 text-sm leading-6 text-slate-300">{category === '공고' ? '공고 모드에서는 링크와 마감일이 함께 들어갑니다.' : category === '중고거래' ? '중고거래 모드에서는 물품 상태와 거래 조건을 자세히 적는 편이 좋습니다.' : '일반 게시글 모드입니다. 자유롭게 내용을 작성할 수 있습니다.'}</p>
           </div>
         </aside>
       </div>

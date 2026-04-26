@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { BACKEND_URL, MEDIA_BASE_URL, getAuthHeader } from '../lib/api';
-import { CATEGORIES, POSTS_PER_PAGE, MAX_PAGE_BUTTONS, inputStyle, calculateDday } from '../lib/utils';
+import { CATEGORIES, POSTS_PER_PAGE, MAX_PAGE_BUTTONS, inputStyle, calculateDday, getCategoryBadgeClass } from '../lib/utils';
 
 function HomePage({ currentUser }) {
   const navigate = useNavigate();
@@ -213,7 +213,7 @@ function HomePage({ currentUser }) {
 
               <div className="min-w-0">
                 <div className="mb-3 flex flex-wrap items-center gap-2">
-                  <span className="rounded-full bg-indigo-100 px-3 py-1 text-[11px] font-extrabold text-indigo-700">{post.카테고리}</span>
+                  <span className={`rounded-full px-3 py-1 text-[11px] font-extrabold ${getCategoryBadgeClass(post.카테고리)}`}>{post.카테고리}</span>
                   {post.file_url && <span className="text-sm text-slate-400">📎 첨부 있음</span>}
                 </div>
                 <h3 className="text-lg font-black tracking-tight text-slate-900 sm:text-xl">{post.제목}</h3>
