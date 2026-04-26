@@ -1,11 +1,11 @@
 {
-  "short_name": "Announcer",
-  "name": "Announcer Project",
+  "short_name": "아우성",
+  "name": "아우성 | 아나운서 커뮤니티",
   "icons": [
     {
       "src": "logo.png",
       "type": "image/png",
-      "sizes": "512x512",
+      "sizes": "1742x1742",
       "purpose": "any"
     }
   ],
