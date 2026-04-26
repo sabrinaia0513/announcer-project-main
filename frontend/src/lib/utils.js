@@ -1,7 +1,7 @@
 import React from 'react';
 import { MEDIA_BASE_URL } from './api';
 
-export const CATEGORIES = ['자유', '스터디', '질문', '정보', '공고', '중고거래'];
+export const CATEGORIES = ['자유', '스터디', '질문', '정보', '공고', '장터'];
 export const POSTS_PER_PAGE = 5;
 export const MAX_PAGE_BUTTONS = 5;
 export const inputStyle = "w-full rounded-2xl border border-slate-200 bg-white/95 px-4 py-3 text-slate-800 shadow-sm outline-none transition-all placeholder:text-slate-400 hover:border-slate-300 focus:border-sky-400 focus:ring-4 focus:ring-sky-100";
@@ -11,7 +11,7 @@ export const getCategoryBadgeClass = (category) => {
     return 'bg-red-100 text-red-700';
   }
 
-  if (category === '중고거래') {
+  if (category === '장터') {
     return 'bg-amber-100 text-amber-800';
   }
 
@@ -21,10 +21,6 @@ export const getCategoryBadgeClass = (category) => {
 export const getPostContentPlaceholder = (category) => {
   if (category === '공고') {
     return '공고 핵심 내용, 지원 자격, 준비 팁 등을 정리해 주세요';
-  }
-
-  if (category === '중고거래') {
-    return '상품명:\n상태:\n사용 기간:\n희망 가격:\n거래 지역:\n거래 방법:';
   }
 
   return '내용을 자유롭게 남겨주세요';
