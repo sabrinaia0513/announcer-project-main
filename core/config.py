@@ -20,6 +20,15 @@ def _parse_csv_env(name: str, default: str) -> list[str]:
 	return [item.strip() for item in raw_value.split(",") if item.strip()]
 
 
+def _parse_positive_int_env(name: str, default: int) -> int:
+	value = os.environ.get(name, str(default)).strip()
+	try:
+		parsed = int(value)
+	except ValueError:
+		return default
+	return parsed if parsed > 0 else default
+
+
 def _normalize_path_prefix(value: str) -> str:
 	value = value.strip()
 	if not value or value == "/":
@@ -42,3 +51,9 @@ DATABASE_URL = os.environ.get("DATABASE_URL", f"sqlite:///{(BASE_DIR / 'communit
 APP_HOST = os.environ.get("APP_HOST", "0.0.0.0")
 APP_PORT = int(os.environ.get("APP_PORT", "8000"))
 APP_RELOAD = os.environ.get("APP_RELOAD", "false").lower() == "true"
+SIGNUP_RATE_LIMIT_MAX_REQUESTS = _parse_positive_int_env("SIGNUP_RATE_LIMIT_MAX_REQUESTS", 3)
+SIGNUP_RATE_LIMIT_WINDOW_SECONDS = _parse_positive_int_env("SIGNUP_RATE_LIMIT_WINDOW_SECONDS", 600)
+LOGIN_RATE_LIMIT_MAX_REQUESTS = _parse_positive_int_env("LOGIN_RATE_LIMIT_MAX_REQUESTS", 5)
+LOGIN_RATE_LIMIT_WINDOW_SECONDS = _parse_positive_int_env("LOGIN_RATE_LIMIT_WINDOW_SECONDS", 60)
+UPLOAD_RATE_LIMIT_MAX_REQUESTS = _parse_positive_int_env("UPLOAD_RATE_LIMIT_MAX_REQUESTS", 10)
+UPLOAD_RATE_LIMIT_WINDOW_SECONDS = _parse_positive_int_env("UPLOAD_RATE_LIMIT_WINDOW_SECONDS", 60)

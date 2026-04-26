@@ -5,16 +5,33 @@ import uuid
 from fastapi import APIRouter, Depends, UploadFile, File
 
 import database
+from core.config import (
+    MAX_FILE_SIZE,
+    UPLOAD_DIR,
+    UPLOAD_RATE_LIMIT_MAX_REQUESTS,
+    UPLOAD_RATE_LIMIT_WINDOW_SECONDS,
+)
 from core.deps import get_current_user
-from core.config import MAX_FILE_SIZE, UPLOAD_DIR
+from core.rate_limit import rate_limiter
 from core.security import validate_file_extension
 from fastapi import HTTPException
 
 router = APIRouter(tags=["upload"])
 
+upload_rate_limit = rate_limiter.limit(
+    scope="upload",
+    max_requests=UPLOAD_RATE_LIMIT_MAX_REQUESTS,
+    window_seconds=UPLOAD_RATE_LIMIT_WINDOW_SECONDS,
+    detail="업로드 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.",
+)
+
 
 @router.post("/upload")
-def upload_file(file: UploadFile = File(...), current_user: database.User = Depends(get_current_user)):
+def upload_file(
+    _: None = Depends(upload_rate_limit),
+    file: UploadFile = File(...),
+    current_user: database.User = Depends(get_current_user),
+):
     file.file.seek(0, 2)
     file_size = file.file.tell()
     file.file.seek(0)
