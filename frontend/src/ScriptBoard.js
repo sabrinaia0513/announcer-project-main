@@ -224,6 +224,12 @@ function ScriptBoard() {
                 </div>
 
                 <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+                  <button
+                    onClick={() => navigate(`/scripts/practice/${script.id}`, { state: { script } })}
+                    className="inline-flex items-center justify-center rounded-2xl bg-slate-900 px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-slate-700"
+                  >
+                    카메라 연습
+                  </button>
                   {isAdmin && (
                     <>
                       <button onClick={() => handleEdit(script)} className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50">

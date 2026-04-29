@@ -71,6 +71,26 @@ function HomePage({ currentUser }) {
     }
   };
 
+  const handleOpenLatestScriptPractice = async () => {
+    if (!currentUser) {
+      navigate('/login');
+      return;
+    }
+
+    try {
+      const response = await axios.get(`${BACKEND_URL}/scripts`, getAuthHeader());
+      if (response.data.length === 0) {
+        alert('연습할 대본이 아직 등록되지 않았습니다.');
+        return;
+      }
+
+      const latestScript = response.data[0];
+      navigate(`/scripts/practice/${latestScript.id}`, { state: { script: latestScript } });
+    } catch (error) {
+      alert('리딩 연습 화면을 여는 중 오류가 발생했습니다.');
+    }
+  };
+
   const totalPages = Math.ceil(totalPosts / POSTS_PER_PAGE);
 
   return (
@@ -127,6 +147,9 @@ function HomePage({ currentUser }) {
             </button>
             <button onClick={() => navigate(currentUser ? '/scripts' : '/login')} className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50">
               원고 보관함
+            </button>
+            <button onClick={handleOpenLatestScriptPractice} className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-slate-700">
+              카메라 리딩 연습
             </button>
           </div>
         </div>

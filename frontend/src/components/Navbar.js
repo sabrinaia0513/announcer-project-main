@@ -9,7 +9,7 @@ function Navbar({ currentUser, handleLogout, notifications, setNotifications }) 
   const currentUserLevel = currentUser?.is_admin ? '관리자' : currentUser?.level;
   const navItems = [
     { to: '/', label: '홈' },
-    ...(currentUser ? [{ to: '/scripts', label: '대본 보관함' }, { to: '/write', label: '글쓰기' }, { to: '/mypage', label: '마이페이지' }] : []),
+    ...(currentUser ? [{ to: '/scripts', label: '대본 보관함' }, { to: '/scripts/practice', label: '리딩 연습' }, { to: '/write', label: '글쓰기' }, { to: '/mypage', label: '마이페이지' }] : []),
   ];
 
   const navItemClassName = ({ isActive }) => (

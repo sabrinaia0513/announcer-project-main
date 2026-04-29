@@ -8,6 +8,7 @@ import WritePostPage from './pages/WritePostPage';
 import PostDetailPage from './pages/PostDetailPage';
 import MyPage from './pages/MyPage';
 import NotFoundPage from './pages/NotFoundPage';
+import ScriptPracticePage from './pages/ScriptPracticePage';
 import ScriptBoard from './ScriptBoard';
 
 function App() {
@@ -96,6 +97,8 @@ function App() {
             <Route path="/post/:id" element={<PostDetailPage currentUser={currentUser} />} />
             <Route path="/mypage" element={<MyPage currentUser={currentUser} setCurrentUser={setCurrentUser} />} />
             <Route path="/scripts" element={<ScriptBoard />} />
+            <Route path="/scripts/practice" element={<ScriptPracticePage />} />
+            <Route path="/scripts/practice/:id" element={<ScriptPracticePage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </div>
