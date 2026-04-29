@@ -3,6 +3,13 @@ import axios from 'axios';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { BACKEND_URL, getAuthHeader } from '../lib/api';
 
+const MIN_SCROLL_SPEED = 30;
+const MAX_SCROLL_LEVEL = 100;
+const MIN_FONT_SIZE = 22;
+const MAX_FONT_SIZE = 72;
+
+const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+
 function ScriptPracticePage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -16,8 +23,8 @@ function ScriptPracticePage() {
   const [cameraEnabled, setCameraEnabled] = useState(false);
   const [cameraError, setCameraError] = useState('');
   const [isPlaying, setIsPlaying] = useState(false);
-  const [scrollSpeed, setScrollSpeed] = useState(34);
-  const [fontSize, setFontSize] = useState(32);
+  const [scrollLevel, setScrollLevel] = useState(0);
+  const [fontSize, setFontSize] = useState(36);
   const [overlayOpacity, setOverlayOpacity] = useState(96);
   const [mirrored, setMirrored] = useState(true);
   const hasInitializedMobileDefaultsRef = useRef(false);
@@ -103,6 +110,7 @@ function ScriptPracticePage() {
     ? practiceText.split('\n').map((line) => line.trim()).filter(Boolean)
     : [];
   const canAutoScroll = scriptParagraphs.length > 0;
+  const effectiveScrollSpeed = MIN_SCROLL_SPEED + scrollLevel;
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
@@ -112,8 +120,7 @@ function ScriptPracticePage() {
     const applyMobileDefaults = (matches) => {
       if (!matches || hasInitializedMobileDefaultsRef.current) return;
 
-      setScrollSpeed((prev) => (prev === 34 ? 26 : prev));
-      setFontSize((prev) => (prev === 32 ? 24 : prev));
+      setFontSize((prev) => (prev === 36 ? 28 : prev));
       setOverlayOpacity((prev) => (prev === 96 ? 100 : prev));
       hasInitializedMobileDefaultsRef.current = true;
     };
@@ -207,7 +214,7 @@ function ScriptPracticePage() {
       const delta = currentTime - previousTime;
       previousTime = currentTime;
       const maxScrollTop = Math.max(container.scrollHeight - container.clientHeight, 0);
-      const nextScrollTop = Math.min(container.scrollTop + (scrollSpeed * delta) / 1000, maxScrollTop);
+      const nextScrollTop = Math.min(container.scrollTop + (effectiveScrollSpeed * delta) / 1000, maxScrollTop);
 
       container.scrollTop = nextScrollTop;
       if (nextScrollTop >= maxScrollTop) {
@@ -223,7 +230,7 @@ function ScriptPracticePage() {
     return () => {
       window.cancelAnimationFrame(animationFrameId);
     };
-  }, [canAutoScroll, isPlaying, scrollSpeed, selectedScript]);
+  }, [canAutoScroll, effectiveScrollSpeed, isPlaying, selectedScript]);
 
   useEffect(() => () => stopCameraStream(), []);
 
@@ -248,6 +255,18 @@ function ScriptPracticePage() {
     setIsPlaying((prev) => !prev);
   };
 
+  const adjustScrollLevel = (delta) => {
+    setScrollLevel((prev) => clamp(prev + delta, 0, MAX_SCROLL_LEVEL));
+  };
+
+  const adjustFontSize = (delta) => {
+    setFontSize((prev) => clamp(prev + delta, MIN_FONT_SIZE, MAX_FONT_SIZE));
+  };
+
+  const adjustOverlayOpacity = (delta) => {
+    setOverlayOpacity((prev) => clamp(prev + delta, 60, 100));
+  };
+
   const teleprompterStatus = !selectedScript
     ? 'NO SCRIPT'
     : isPlaying
@@ -257,15 +276,20 @@ function ScriptPracticePage() {
         : 'TEXT READY';
 
   return (
-    <div className="space-y-6 pb-28 xl:space-y-8 xl:pb-0">
-      <section className="relative overflow-hidden rounded-[2rem] bg-slate-900 px-6 py-7 text-white shadow-[0_24px_80px_-48px_rgba(15,23,42,0.9)] sm:px-8 xl:px-10">
+    <div className="space-y-4 pb-48 sm:pb-56 xl:space-y-5">
+      <section className="relative overflow-hidden rounded-[1.75rem] bg-slate-900 px-4 py-4 text-white shadow-[0_24px_80px_-48px_rgba(15,23,42,0.9)] sm:rounded-[2rem] sm:px-6 sm:py-5 xl:px-8">
         <div className="absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_top_right,_rgba(56,189,248,0.35),_transparent_55%)]" />
-        <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="relative z-10 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.32em] text-sky-200">Reading Practice Mode</p>
-            <h1 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">카메라 리딩 프롬프터</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-200 sm:text-base">
-              카메라 미리보기 위에 뉴스 원고를 겹쳐두고, 속도와 글자 크기를 조절하면서 실제 앵커 멘트처럼 읽는 연습 화면입니다.
+            <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+              <h1 className="text-2xl font-black tracking-tight sm:text-3xl">카메라 리딩 프롬프터</h1>
+              <div className="inline-flex self-start rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-200">
+                {selectedScript ? `대본 #${selectedScript.id}` : 'NO SCRIPT'}
+              </div>
+            </div>
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-200 sm:text-base">
+              프롬프트를 화면 거의 전체 높이로 키우고, 하단 리모컨으로 속도와 글자 크기를 즉시 조절할 수 있게 구성했습니다.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -287,92 +311,89 @@ function ScriptPracticePage() {
         </div>
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_380px]">
-        <div className="space-y-4">
-          <div className="rounded-[2rem] border border-slate-200 bg-white/90 p-4 shadow-sm backdrop-blur sm:p-5">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h2 className="text-2xl font-black tracking-tight text-slate-900">실전 프롬프터 화면</h2>
-                <p className="mt-2 text-sm text-slate-500">정면 카메라 위에 원고 텍스트만 직접 띄워서 얼굴과 시선이 같이 보이도록 구성했습니다.</p>
-              </div>
-              <div className="rounded-full bg-slate-100 px-4 py-2 text-xs font-bold text-slate-600">
-                {selectedScript ? `선택 대본 #${selectedScript.id}` : '대본을 선택해 주세요'}
-              </div>
-            </div>
+      <section className="relative overflow-hidden rounded-[1.75rem] border border-slate-200 bg-slate-950 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.9)] sm:rounded-[2rem] xl:h-[calc(100vh-10rem)] xl:min-h-[44rem]">
+        <div className="relative h-[calc(100vh-14rem)] min-h-[32rem] sm:h-[calc(100vh-15rem)] xl:h-full">
+          <div className="absolute inset-x-0 top-0 z-20 flex items-center justify-between bg-gradient-to-b from-black/80 via-black/35 to-transparent px-4 py-4 text-[11px] font-bold uppercase tracking-[0.24em] text-white/85 sm:px-6 sm:py-5">
+            <span>ON AIR PRACTICE</span>
+            <span>{cameraEnabled ? 'CAM READY' : 'CAM OFF'}</span>
           </div>
 
-          <div className="relative overflow-hidden rounded-[1.75rem] border border-slate-200 bg-slate-950 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.9)] sm:rounded-[2rem]">
-            <div className="absolute inset-x-0 top-0 z-20 flex items-center justify-between bg-gradient-to-b from-black/65 to-transparent px-5 py-4 text-xs font-bold tracking-[0.24em] text-white/80">
-              <span>ON AIR PRACTICE</span>
-              <span>{cameraEnabled ? 'CAM READY' : 'CAM OFF'}</span>
-            </div>
-
-            {cameraEnabled ? (
-              <video
-                ref={videoRef}
-                autoPlay
-                muted
-                playsInline
-                className={`aspect-[10/16] w-full object-cover sm:aspect-[16/10] ${mirrored ? 'scale-x-[-1]' : ''}`}
-              />
-            ) : (
-              <div className="flex aspect-[10/16] w-full items-center justify-center bg-[radial-gradient(circle_at_top,_rgba(14,165,233,0.2),_transparent_45%),linear-gradient(135deg,#020617,#111827_45%,#0f172a)] px-6 text-center text-slate-300 sm:aspect-[16/10]">
-                <div>
-                  <p className="text-sm font-bold uppercase tracking-[0.3em] text-sky-300">Camera Preview</p>
-                  <p className="mt-4 text-2xl font-black text-white">카메라를 켜면 이 영역 위로 원고가 흐릅니다.</p>
-                  <p className="mt-3 text-sm leading-6 text-slate-300">모바일이나 HTTPS 환경에서 권한을 허용하면 실제 셀프캠처럼 시선 처리 연습에 바로 사용할 수 있습니다.</p>
-                </div>
+          {cameraEnabled ? (
+            <video
+              ref={videoRef}
+              autoPlay
+              muted
+              playsInline
+              className={`absolute inset-0 h-full w-full object-cover ${mirrored ? 'scale-x-[-1]' : ''}`}
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center bg-[radial-gradient(circle_at_top,_rgba(14,165,233,0.22),_transparent_42%),linear-gradient(135deg,#020617,#111827_45%,#0f172a)] px-6 text-center text-slate-300">
+              <div>
+                <p className="text-sm font-bold uppercase tracking-[0.3em] text-sky-300">Camera Preview</p>
+                <p className="mt-4 text-2xl font-black text-white sm:text-3xl">카메라를 켜면 이 영역 전체가 프롬프터 화면이 됩니다.</p>
+                <p className="mt-3 text-sm leading-6 text-slate-300 sm:text-base">모바일과 PC 모두에서 가능한 한 크게 원고가 보이도록 카메라 위에 바로 텍스트를 띄웁니다.</p>
               </div>
-            )}
+            </div>
+          )}
 
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/55" />
-            <div className="absolute inset-x-0 bottom-0 z-20 px-4 pb-6 sm:px-6 sm:pb-8">
-              <div className="mx-auto max-w-3xl px-2 text-white sm:px-4">
-                <div className="mb-4 flex flex-col gap-1 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-200 sm:flex-row sm:items-center sm:justify-between">
-                  <span>{selectedScript?.title || '원고를 선택해 주세요'}</span>
-                  <span>{teleprompterStatus}</span>
-                </div>
-                <div ref={teleprompterRef} className="h-[44vh] overflow-hidden sm:h-[20rem]">
-                  {scriptParagraphs.length > 0 ? (
-                    <div className="pr-1 font-semibold text-white sm:pr-2" style={{ color: `rgba(255, 255, 255, ${overlayOpacity / 100})`, fontSize: `${fontSize}px` }}>
-                      <div className="h-[28vh] sm:h-24" />
-                      <div className="space-y-4 leading-[1.7] sm:space-y-5 sm:leading-[1.85]">
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-32 bg-gradient-to-b from-black/70 via-black/25 to-transparent sm:h-36" />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-40 bg-gradient-to-t from-black/80 via-black/25 to-transparent sm:h-48" />
+
+          <div className="absolute inset-0 z-20 px-4 pb-28 pt-16 sm:px-8 sm:pb-36 sm:pt-20 lg:px-12">
+            <div className="flex h-full flex-col text-white">
+              <div className="mb-3 flex flex-col gap-2 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-200 sm:mb-4 sm:flex-row sm:items-center sm:justify-between">
+                <span>{selectedScript?.title || '원고를 선택해 주세요'}</span>
+                <span>{teleprompterStatus}</span>
+              </div>
+              <div ref={teleprompterRef} className="min-h-0 flex-1 overflow-hidden">
+                {scriptParagraphs.length > 0 ? (
+                  <div
+                    className="w-full pr-1 text-center font-black tracking-tight text-white sm:pr-2"
+                    style={{
+                      color: `rgba(255, 255, 255, ${overlayOpacity / 100})`,
+                      fontSize: `${fontSize}px`,
+                      textShadow: '0 2px 10px rgba(2, 6, 23, 0.98), 0 0 22px rgba(2, 6, 23, 0.92), 0 0 42px rgba(2, 6, 23, 0.68)',
+                    }}
+                  >
+                    <div className="h-[12vh] sm:h-[9vh]" />
+                    <div className="space-y-4 leading-[1.45] sm:space-y-5 sm:leading-[1.55]">
                       {scriptParagraphs.map((line, index) => (
-                        <p key={`${selectedScript.id}-${index}`} className="drop-shadow-[0_3px_10px_rgba(2,6,23,0.95)] sm:drop-shadow-[0_4px_12px_rgba(2,6,23,0.95)]">
+                        <p key={`${selectedScript.id}-${index}`} className="whitespace-pre-wrap break-keep">
                           {line}
                         </p>
                       ))}
-                      </div>
-                      <div className="h-[52vh] sm:h-36" />
                     </div>
-                  ) : (
-                    <div className="py-10 text-center text-sm text-slate-300">선택된 원고가 없습니다.</div>
-                  )}
-                </div>
+                    <div className="h-[74vh] sm:h-[62vh]" />
+                  </div>
+                ) : (
+                  <div className="flex h-full items-center justify-center text-center text-sm font-semibold text-slate-300 sm:text-base">
+                    선택된 원고가 없습니다.
+                  </div>
+                )}
               </div>
             </div>
           </div>
-
-          {cameraError && (
-            <div className="rounded-[1.5rem] border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-semibold text-amber-800">
-              {cameraError}
-            </div>
-          )}
         </div>
+      </section>
 
-        <aside className="space-y-4 rounded-[2rem] border border-slate-200 bg-white/90 p-5 shadow-sm backdrop-blur sm:p-6">
-          <div>
-            <h2 className="text-2xl font-black tracking-tight text-slate-900">연습 설정</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-500">대본을 선택하고 스크롤 속도, 글자 크기, 오버레이 농도를 상황에 맞게 조절하세요.</p>
-          </div>
+      {cameraError && (
+        <div className="rounded-[1.5rem] border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-semibold text-amber-800">
+          {cameraError}
+        </div>
+      )}
 
-          <div className="space-y-4 rounded-[1.5rem] bg-slate-50 p-4">
-            <div>
-              <label className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-slate-500">연습할 대본</label>
+      <div
+        className="fixed left-1/2 z-40 w-[calc(100vw-1rem)] max-w-6xl -translate-x-1/2 rounded-[1.5rem] border border-white/15 bg-slate-950/88 p-3 text-white shadow-2xl backdrop-blur-xl sm:w-[calc(100vw-2rem)] sm:rounded-[1.75rem] sm:p-4"
+        style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)' }}
+      >
+        <div className="max-h-[42vh] space-y-3 overflow-y-auto lg:max-h-none">
+          <div className="grid gap-2 lg:grid-cols-[minmax(0,260px)_repeat(4,minmax(0,1fr))]">
+            <label className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+              <span className="mb-2 block text-[11px] font-bold uppercase tracking-[0.22em] text-slate-300">연습 대본</span>
               <select
                 value={selectedScript?.id || ''}
                 onChange={handleScriptChange}
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 outline-none transition-colors hover:border-slate-300 focus:border-sky-400"
+                className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 text-sm font-semibold text-white outline-none transition-colors hover:border-white/20 focus:border-sky-400"
                 disabled={isLoading || scripts.length === 0}
               >
                 {scripts.length === 0 ? (
@@ -383,101 +404,89 @@ function ScriptPracticePage() {
                   ))
                 )}
               </select>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-              <button
-                type="button"
-                onClick={handleTogglePlay}
-                disabled={!selectedScript || !canAutoScroll}
-                className={`rounded-2xl px-5 py-4 text-sm font-bold text-white transition-colors ${selectedScript && canAutoScroll ? 'bg-slate-900 hover:bg-slate-700' : 'bg-slate-300'}`}
-              >
-                {isPlaying ? '자동 스크롤 일시정지' : '자동 스크롤 시작'}
-              </button>
-              <button
-                type="button"
-                onClick={handleRestart}
-                disabled={!selectedScript}
-                className="rounded-2xl border border-slate-200 bg-white px-5 py-4 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
-              >
-                처음부터 다시 보기
-              </button>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <label className="block rounded-[1.5rem] border border-slate-200 bg-white p-4">
-              <div className="flex items-center justify-between gap-4 text-sm font-bold text-slate-800">
-                <span>스크롤 속도</span>
-                <span>{scrollSpeed}px/s</span>
-              </div>
-              <input type="range" min="16" max="90" step="2" value={scrollSpeed} onChange={(event) => setScrollSpeed(Number(event.target.value))} className="mt-4 w-full accent-sky-500" />
-            </label>
-
-            <label className="block rounded-[1.5rem] border border-slate-200 bg-white p-4">
-              <div className="flex items-center justify-between gap-4 text-sm font-bold text-slate-800">
-                <span>글자 크기</span>
-                <span>{fontSize}px</span>
-              </div>
-              <input type="range" min="24" max="52" step="2" value={fontSize} onChange={(event) => setFontSize(Number(event.target.value))} className="mt-4 w-full accent-sky-500" />
-            </label>
-
-            <label className="block rounded-[1.5rem] border border-slate-200 bg-white p-4">
-              <div className="flex items-center justify-between gap-4 text-sm font-bold text-slate-800">
-                <span>글자 선명도</span>
-                <span>{overlayOpacity}%</span>
-              </div>
-              <input type="range" min="60" max="100" step="1" value={overlayOpacity} onChange={(event) => setOverlayOpacity(Number(event.target.value))} className="mt-4 w-full accent-sky-500" />
             </label>
 
             <button
               type="button"
-              onClick={() => setMirrored((prev) => !prev)}
-              className="w-full rounded-[1.5rem] border border-slate-200 bg-white px-5 py-4 text-left text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50"
+              onClick={handleTogglePlay}
+              disabled={!selectedScript || !canAutoScroll}
+              className={`rounded-2xl px-4 py-4 text-sm font-bold transition-colors ${selectedScript && canAutoScroll ? 'bg-sky-400 text-slate-950 hover:bg-sky-300' : 'bg-white/10 text-slate-400'}`}
             >
-              {mirrored ? '현재 카메라 좌우 반전 켜짐' : '현재 카메라 좌우 반전 꺼짐'}
+              {isPlaying ? '스크롤 정지' : '스크롤 시작'}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleRestart}
+              disabled={!selectedScript}
+              className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-sm font-bold text-white transition-colors hover:bg-white/10 disabled:text-slate-500"
+            >
+              처음부터 다시 보기
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setCameraEnabled((prev) => !prev)}
+              className={`rounded-2xl px-4 py-4 text-sm font-bold transition-colors ${cameraEnabled ? 'bg-white text-slate-950 hover:bg-slate-100' : 'bg-white/5 text-white hover:bg-white/10'}`}
+            >
+              {cameraEnabled ? '카메라 끄기' : '카메라 켜기'}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setMirrored((prev) => !prev)}
+              className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-sm font-bold text-white transition-colors hover:bg-white/10"
+            >
+              {mirrored ? '좌우 반전 켜짐' : '좌우 반전 꺼짐'}
             </button>
           </div>
 
-          <div className="rounded-[1.5rem] bg-slate-900 px-5 py-5 text-sm text-slate-200">
-            <p className="font-bold text-white">연습 팁</p>
-            <ul className="mt-3 space-y-2 leading-6 text-slate-300">
-              <li>문단이 너무 빨리 지나가면 스크롤 속도를 20~30px/s로 낮춰 시작하세요.</li>
-              <li>시선이 흔들리면 카메라를 켠 뒤 좌우 반전 상태를 바꿔 가장 자연스러운 쪽을 선택하세요.</li>
-              <li>실제 뉴스 리딩처럼 상체 구도와 표정까지 같이 보려면 모바일 세로 화면보다 노트북 가로 화면이 더 안정적입니다.</li>
-            </ul>
-          </div>
-        </aside>
-      </section>
+          <div className="grid gap-3 lg:grid-cols-3">
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-bold text-white">스크롤 속도</p>
+                  <p className="mt-1 text-xs text-slate-300">0-100 단계, 내부 기준 {MIN_SCROLL_SPEED}px/s부터 시작</p>
+                </div>
+                <div className="rounded-full bg-white/10 px-3 py-1 text-sm font-black text-sky-300">{scrollLevel}</div>
+              </div>
+              <div className="mt-4 flex items-center gap-3">
+                <button type="button" onClick={() => adjustScrollLevel(-5)} className="h-10 w-10 rounded-full border border-white/10 bg-white/10 text-lg font-black text-white transition-colors hover:bg-white/15">-</button>
+                <input type="range" min="0" max="100" step="1" value={scrollLevel} onChange={(event) => setScrollLevel(Number(event.target.value))} className="w-full accent-sky-400" />
+                <button type="button" onClick={() => adjustScrollLevel(5)} className="h-10 w-10 rounded-full border border-white/10 bg-white/10 text-lg font-black text-white transition-colors hover:bg-white/15">+</button>
+              </div>
+            </div>
 
-      <div
-        className="fixed inset-x-4 z-40 rounded-[1.5rem] border border-slate-200 bg-white/95 p-3 shadow-2xl backdrop-blur sm:hidden"
-        style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 1rem)' }}
-      >
-        <div className="grid grid-cols-3 gap-2">
-          <button
-            type="button"
-            onClick={() => setCameraEnabled((prev) => !prev)}
-            className={`rounded-2xl px-3 py-3 text-xs font-bold transition-colors ${cameraEnabled ? 'bg-slate-900 text-white' : 'bg-sky-100 text-sky-900'}`}
-          >
-            {cameraEnabled ? '카메라 끄기' : '카메라 켜기'}
-          </button>
-          <button
-            type="button"
-            onClick={handleTogglePlay}
-            disabled={!selectedScript || !canAutoScroll}
-            className={`rounded-2xl px-3 py-3 text-xs font-bold transition-colors ${selectedScript && canAutoScroll ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-400'}`}
-          >
-            {isPlaying ? '스크롤 정지' : '스크롤 시작'}
-          </button>
-          <button
-            type="button"
-            onClick={handleRestart}
-            disabled={!selectedScript}
-            className="rounded-2xl border border-slate-200 bg-white px-3 py-3 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-50 disabled:text-slate-400"
-          >
-            처음부터
-          </button>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-bold text-white">글자 크기</p>
+                  <p className="mt-1 text-xs text-slate-300">화면을 꽉 채우되 가독성은 유지</p>
+                </div>
+                <div className="rounded-full bg-white/10 px-3 py-1 text-sm font-black text-sky-300">{fontSize}px</div>
+              </div>
+              <div className="mt-4 flex items-center gap-3">
+                <button type="button" onClick={() => adjustFontSize(-2)} className="h-10 w-10 rounded-full border border-white/10 bg-white/10 text-lg font-black text-white transition-colors hover:bg-white/15">-</button>
+                <input type="range" min={MIN_FONT_SIZE} max={MAX_FONT_SIZE} step="1" value={fontSize} onChange={(event) => setFontSize(Number(event.target.value))} className="w-full accent-sky-400" />
+                <button type="button" onClick={() => adjustFontSize(2)} className="h-10 w-10 rounded-full border border-white/10 bg-white/10 text-lg font-black text-white transition-colors hover:bg-white/15">+</button>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-bold text-white">글자 선명도</p>
+                  <p className="mt-1 text-xs text-slate-300">배경 위에서 글자가 또렷하게 보이도록 조절</p>
+                </div>
+                <div className="rounded-full bg-white/10 px-3 py-1 text-sm font-black text-sky-300">{overlayOpacity}%</div>
+              </div>
+              <div className="mt-4 flex items-center gap-3">
+                <button type="button" onClick={() => adjustOverlayOpacity(-5)} className="h-10 w-10 rounded-full border border-white/10 bg-white/10 text-lg font-black text-white transition-colors hover:bg-white/15">-</button>
+                <input type="range" min="60" max="100" step="1" value={overlayOpacity} onChange={(event) => setOverlayOpacity(Number(event.target.value))} className="w-full accent-sky-400" />
+                <button type="button" onClick={() => adjustOverlayOpacity(5)} className="h-10 w-10 rounded-full border border-white/10 bg-white/10 text-lg font-black text-white transition-colors hover:bg-white/15">+</button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
