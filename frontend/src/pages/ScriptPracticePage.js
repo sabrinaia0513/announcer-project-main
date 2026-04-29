@@ -9,7 +9,6 @@ function ScriptPracticePage() {
   const { id: scriptId } = useParams();
   const videoRef = useRef(null);
   const teleprompterRef = useRef(null);
-  const teleprompterContentRef = useRef(null);
   const streamRef = useRef(null);
   const [scripts, setScripts] = useState([]);
   const [selectedScript, setSelectedScript] = useState(location.state?.script || null);
@@ -17,7 +16,6 @@ function ScriptPracticePage() {
   const [cameraEnabled, setCameraEnabled] = useState(false);
   const [cameraError, setCameraError] = useState('');
   const [isPlaying, setIsPlaying] = useState(false);
-  const [canAutoScroll, setCanAutoScroll] = useState(false);
   const [scrollSpeed, setScrollSpeed] = useState(34);
   const [fontSize, setFontSize] = useState(32);
   const [overlayOpacity, setOverlayOpacity] = useState(74);
@@ -103,38 +101,7 @@ function ScriptPracticePage() {
   const scriptParagraphs = selectedScript?.content
     ? selectedScript.content.split('\n').map((line) => line.trim()).filter(Boolean)
     : [];
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return undefined;
-
-    let animationFrameId = 0;
-
-    const measureScrollableHeight = () => {
-      const viewport = teleprompterRef.current;
-      const content = teleprompterContentRef.current;
-
-      if (!viewport || !content) {
-        setCanAutoScroll(false);
-        return;
-      }
-
-      const viewportHeight = viewport.clientHeight;
-      const contentHeight = content.scrollHeight;
-      setCanAutoScroll(contentHeight - viewportHeight > 24);
-    };
-
-    const scheduleMeasurement = () => {
-      animationFrameId = window.requestAnimationFrame(measureScrollableHeight);
-    };
-
-    scheduleMeasurement();
-    window.addEventListener('resize', scheduleMeasurement);
-
-    return () => {
-      window.cancelAnimationFrame(animationFrameId);
-      window.removeEventListener('resize', scheduleMeasurement);
-    };
-  }, [selectedScript?.id, fontSize, scriptParagraphs.length]);
+  const canAutoScroll = scriptParagraphs.length > 0;
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
@@ -366,12 +333,16 @@ function ScriptPracticePage() {
                 </div>
                 <div ref={teleprompterRef} className="h-[44vh] overflow-hidden sm:h-[20rem]">
                   {scriptParagraphs.length > 0 ? (
-                    <div ref={teleprompterContentRef} className="space-y-4 pb-[20vh] pr-1 font-semibold leading-[1.7] text-white sm:space-y-5 sm:pb-28 sm:pr-2 sm:leading-[1.85]" style={{ fontSize: `${fontSize}px` }}>
+                    <div className="pr-1 font-semibold text-white sm:pr-2" style={{ fontSize: `${fontSize}px` }}>
+                      <div className="h-[28vh] sm:h-24" />
+                      <div className="space-y-4 leading-[1.7] sm:space-y-5 sm:leading-[1.85]">
                       {scriptParagraphs.map((line, index) => (
                         <p key={`${selectedScript.id}-${index}`} className="drop-shadow-[0_4px_12px_rgba(15,23,42,0.5)]">
                           {line}
                         </p>
                       ))}
+                      </div>
+                      <div className="h-[52vh] sm:h-36" />
                     </div>
                   ) : (
                     <div className="py-10 text-center text-sm text-slate-300">선택된 원고가 없습니다.</div>
@@ -469,11 +440,6 @@ function ScriptPracticePage() {
 
           <div className="rounded-[1.5rem] bg-slate-900 px-5 py-5 text-sm text-slate-200">
             <p className="font-bold text-white">연습 팁</p>
-            {!canAutoScroll && selectedScript && (
-              <p className="mt-3 rounded-xl bg-white/10 px-3 py-2 text-xs font-semibold text-sky-100">
-                현재 원고는 화면에 바로 표시되고 있습니다. 자동 스크롤이 필요할 만큼 길지 않으면 시작 버튼은 비활성화됩니다.
-              </p>
-            )}
             <ul className="mt-3 space-y-2 leading-6 text-slate-300">
               <li>문단이 너무 빨리 지나가면 스크롤 속도를 20~30px/s로 낮춰 시작하세요.</li>
               <li>시선이 흔들리면 카메라를 켠 뒤 좌우 반전 상태를 바꿔 가장 자연스러운 쪽을 선택하세요.</li>
