@@ -18,7 +18,7 @@ function ScriptPracticePage() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [scrollSpeed, setScrollSpeed] = useState(34);
   const [fontSize, setFontSize] = useState(32);
-  const [overlayOpacity, setOverlayOpacity] = useState(74);
+  const [overlayOpacity, setOverlayOpacity] = useState(96);
   const [mirrored, setMirrored] = useState(true);
   const hasInitializedMobileDefaultsRef = useRef(false);
 
@@ -114,7 +114,7 @@ function ScriptPracticePage() {
 
       setScrollSpeed((prev) => (prev === 34 ? 26 : prev));
       setFontSize((prev) => (prev === 32 ? 24 : prev));
-      setOverlayOpacity((prev) => (prev === 74 ? 82 : prev));
+      setOverlayOpacity((prev) => (prev === 96 ? 100 : prev));
       hasInitializedMobileDefaultsRef.current = true;
     };
 
@@ -293,7 +293,7 @@ function ScriptPracticePage() {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-2xl font-black tracking-tight text-slate-900">실전 프롬프터 화면</h2>
-                <p className="mt-2 text-sm text-slate-500">정면 카메라 미리보기 위에 원고가 반투명 레이어로 표시됩니다.</p>
+                <p className="mt-2 text-sm text-slate-500">정면 카메라 위에 원고 텍스트만 직접 띄워서 얼굴과 시선이 같이 보이도록 구성했습니다.</p>
               </div>
               <div className="rounded-full bg-slate-100 px-4 py-2 text-xs font-bold text-slate-600">
                 {selectedScript ? `선택 대본 #${selectedScript.id}` : '대본을 선택해 주세요'}
@@ -326,19 +326,19 @@ function ScriptPracticePage() {
             )}
 
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/55" />
-            <div className="absolute inset-x-0 bottom-0 z-20 px-4 pb-4 sm:px-6 sm:pb-6">
-              <div className="mx-auto max-w-3xl rounded-[1.5rem] border border-white/15 px-4 py-4 text-white shadow-2xl backdrop-blur-md sm:rounded-[1.75rem] sm:px-6 sm:py-5" style={{ backgroundColor: `rgba(15, 23, 42, ${overlayOpacity / 100})` }}>
-                <div className="mb-3 flex flex-col gap-1 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-300 sm:flex-row sm:items-center sm:justify-between">
+            <div className="absolute inset-x-0 bottom-0 z-20 px-4 pb-6 sm:px-6 sm:pb-8">
+              <div className="mx-auto max-w-3xl px-2 text-white sm:px-4">
+                <div className="mb-4 flex flex-col gap-1 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-200 sm:flex-row sm:items-center sm:justify-between">
                   <span>{selectedScript?.title || '원고를 선택해 주세요'}</span>
                   <span>{teleprompterStatus}</span>
                 </div>
                 <div ref={teleprompterRef} className="h-[44vh] overflow-hidden sm:h-[20rem]">
                   {scriptParagraphs.length > 0 ? (
-                    <div className="pr-1 font-semibold text-white sm:pr-2" style={{ fontSize: `${fontSize}px` }}>
+                    <div className="pr-1 font-semibold text-white sm:pr-2" style={{ color: `rgba(255, 255, 255, ${overlayOpacity / 100})`, fontSize: `${fontSize}px` }}>
                       <div className="h-[28vh] sm:h-24" />
                       <div className="space-y-4 leading-[1.7] sm:space-y-5 sm:leading-[1.85]">
                       {scriptParagraphs.map((line, index) => (
-                        <p key={`${selectedScript.id}-${index}`} className="drop-shadow-[0_4px_12px_rgba(15,23,42,0.5)]">
+                        <p key={`${selectedScript.id}-${index}`} className="drop-shadow-[0_3px_10px_rgba(2,6,23,0.95)] sm:drop-shadow-[0_4px_12px_rgba(2,6,23,0.95)]">
                           {line}
                         </p>
                       ))}
@@ -424,10 +424,10 @@ function ScriptPracticePage() {
 
             <label className="block rounded-[1.5rem] border border-slate-200 bg-white p-4">
               <div className="flex items-center justify-between gap-4 text-sm font-bold text-slate-800">
-                <span>원고 배경 농도</span>
+                <span>글자 선명도</span>
                 <span>{overlayOpacity}%</span>
               </div>
-              <input type="range" min="35" max="92" step="1" value={overlayOpacity} onChange={(event) => setOverlayOpacity(Number(event.target.value))} className="mt-4 w-full accent-sky-500" />
+              <input type="range" min="60" max="100" step="1" value={overlayOpacity} onChange={(event) => setOverlayOpacity(Number(event.target.value))} className="mt-4 w-full accent-sky-500" />
             </label>
 
             <button
