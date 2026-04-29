@@ -9,6 +9,7 @@ function ScriptPracticePage() {
   const { id: scriptId } = useParams();
   const videoRef = useRef(null);
   const teleprompterRef = useRef(null);
+  const teleprompterContentRef = useRef(null);
   const streamRef = useRef(null);
   const [scripts, setScripts] = useState([]);
   const [selectedScript, setSelectedScript] = useState(location.state?.script || null);
@@ -16,6 +17,7 @@ function ScriptPracticePage() {
   const [cameraEnabled, setCameraEnabled] = useState(false);
   const [cameraError, setCameraError] = useState('');
   const [isPlaying, setIsPlaying] = useState(false);
+  const [canAutoScroll, setCanAutoScroll] = useState(false);
   const [scrollSpeed, setScrollSpeed] = useState(34);
   const [fontSize, setFontSize] = useState(32);
   const [overlayOpacity, setOverlayOpacity] = useState(74);
@@ -97,6 +99,42 @@ function ScriptPracticePage() {
     }
     setIsPlaying(false);
   }, [selectedScript?.id]);
+
+  const scriptParagraphs = selectedScript?.content
+    ? selectedScript.content.split('\n').map((line) => line.trim()).filter(Boolean)
+    : [];
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    let animationFrameId = 0;
+
+    const measureScrollableHeight = () => {
+      const viewport = teleprompterRef.current;
+      const content = teleprompterContentRef.current;
+
+      if (!viewport || !content) {
+        setCanAutoScroll(false);
+        return;
+      }
+
+      const viewportHeight = viewport.clientHeight;
+      const contentHeight = content.scrollHeight;
+      setCanAutoScroll(contentHeight - viewportHeight > 24);
+    };
+
+    const scheduleMeasurement = () => {
+      animationFrameId = window.requestAnimationFrame(measureScrollableHeight);
+    };
+
+    scheduleMeasurement();
+    window.addEventListener('resize', scheduleMeasurement);
+
+    return () => {
+      window.cancelAnimationFrame(animationFrameId);
+      window.removeEventListener('resize', scheduleMeasurement);
+    };
+  }, [selectedScript?.id, fontSize, scriptParagraphs.length]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
@@ -186,7 +224,7 @@ function ScriptPracticePage() {
   }, [cameraEnabled]);
 
   useEffect(() => {
-    if (!isPlaying || !selectedScript) return undefined;
+    if (!isPlaying || !selectedScript || !canAutoScroll) return undefined;
 
     let animationFrameId = 0;
     let previousTime = performance.now();
@@ -217,7 +255,7 @@ function ScriptPracticePage() {
     return () => {
       window.cancelAnimationFrame(animationFrameId);
     };
-  }, [isPlaying, scrollSpeed, selectedScript]);
+  }, [canAutoScroll, isPlaying, scrollSpeed, selectedScript]);
 
   useEffect(() => () => stopCameraStream(), []);
 
@@ -237,9 +275,18 @@ function ScriptPracticePage() {
     setIsPlaying(false);
   };
 
-  const scriptParagraphs = selectedScript?.content
-    ? selectedScript.content.split('\n').map((line) => line.trim()).filter(Boolean)
-    : [];
+  const handleTogglePlay = () => {
+    if (!selectedScript || !canAutoScroll) return;
+    setIsPlaying((prev) => !prev);
+  };
+
+  const teleprompterStatus = !selectedScript
+    ? 'NO SCRIPT'
+    : isPlaying
+      ? 'SCROLLING'
+      : canAutoScroll
+        ? 'READY'
+        : 'TEXT READY';
 
   return (
     <div className="space-y-6 pb-28 xl:space-y-8 xl:pb-0">
@@ -315,11 +362,11 @@ function ScriptPracticePage() {
               <div className="mx-auto max-w-3xl rounded-[1.5rem] border border-white/15 px-4 py-4 text-white shadow-2xl backdrop-blur-md sm:rounded-[1.75rem] sm:px-6 sm:py-5" style={{ backgroundColor: `rgba(15, 23, 42, ${overlayOpacity / 100})` }}>
                 <div className="mb-3 flex flex-col gap-1 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-300 sm:flex-row sm:items-center sm:justify-between">
                   <span>{selectedScript?.title || '원고를 선택해 주세요'}</span>
-                  <span>{isPlaying ? 'SCROLLING' : 'PAUSED'}</span>
+                  <span>{teleprompterStatus}</span>
                 </div>
-                <div ref={teleprompterRef} className="max-h-[44vh] overflow-hidden sm:max-h-[20rem]">
+                <div ref={teleprompterRef} className="h-[44vh] overflow-hidden sm:h-[20rem]">
                   {scriptParagraphs.length > 0 ? (
-                    <div className="space-y-4 pr-1 font-semibold leading-[1.7] text-white sm:space-y-5 sm:pr-2 sm:leading-[1.85]" style={{ fontSize: `${fontSize}px` }}>
+                    <div ref={teleprompterContentRef} className="space-y-4 pb-[20vh] pr-1 font-semibold leading-[1.7] text-white sm:space-y-5 sm:pb-28 sm:pr-2 sm:leading-[1.85]" style={{ fontSize: `${fontSize}px` }}>
                       {scriptParagraphs.map((line, index) => (
                         <p key={`${selectedScript.id}-${index}`} className="drop-shadow-[0_4px_12px_rgba(15,23,42,0.5)]">
                           {line}
@@ -369,9 +416,9 @@ function ScriptPracticePage() {
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
               <button
                 type="button"
-                onClick={() => setIsPlaying((prev) => !prev)}
-                disabled={!selectedScript}
-                className={`rounded-2xl px-5 py-4 text-sm font-bold text-white transition-colors ${selectedScript ? 'bg-slate-900 hover:bg-slate-700' : 'bg-slate-300'}`}
+                onClick={handleTogglePlay}
+                disabled={!selectedScript || !canAutoScroll}
+                className={`rounded-2xl px-5 py-4 text-sm font-bold text-white transition-colors ${selectedScript && canAutoScroll ? 'bg-slate-900 hover:bg-slate-700' : 'bg-slate-300'}`}
               >
                 {isPlaying ? '자동 스크롤 일시정지' : '자동 스크롤 시작'}
               </button>
@@ -422,6 +469,11 @@ function ScriptPracticePage() {
 
           <div className="rounded-[1.5rem] bg-slate-900 px-5 py-5 text-sm text-slate-200">
             <p className="font-bold text-white">연습 팁</p>
+            {!canAutoScroll && selectedScript && (
+              <p className="mt-3 rounded-xl bg-white/10 px-3 py-2 text-xs font-semibold text-sky-100">
+                현재 원고는 화면에 바로 표시되고 있습니다. 자동 스크롤이 필요할 만큼 길지 않으면 시작 버튼은 비활성화됩니다.
+              </p>
+            )}
             <ul className="mt-3 space-y-2 leading-6 text-slate-300">
               <li>문단이 너무 빨리 지나가면 스크롤 속도를 20~30px/s로 낮춰 시작하세요.</li>
               <li>시선이 흔들리면 카메라를 켠 뒤 좌우 반전 상태를 바꿔 가장 자연스러운 쪽을 선택하세요.</li>
@@ -445,9 +497,9 @@ function ScriptPracticePage() {
           </button>
           <button
             type="button"
-            onClick={() => setIsPlaying((prev) => !prev)}
-            disabled={!selectedScript}
-            className={`rounded-2xl px-3 py-3 text-xs font-bold transition-colors ${selectedScript ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-400'}`}
+            onClick={handleTogglePlay}
+            disabled={!selectedScript || !canAutoScroll}
+            className={`rounded-2xl px-3 py-3 text-xs font-bold transition-colors ${selectedScript && canAutoScroll ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-400'}`}
           >
             {isPlaying ? '스크롤 정지' : '스크롤 시작'}
           </button>
