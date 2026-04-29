@@ -98,8 +98,9 @@ function ScriptPracticePage() {
     setIsPlaying(false);
   }, [selectedScript?.id]);
 
-  const scriptParagraphs = selectedScript?.content
-    ? selectedScript.content.split('\n').map((line) => line.trim()).filter(Boolean)
+  const practiceText = selectedScript?.prompt_content || selectedScript?.content || '';
+  const scriptParagraphs = practiceText
+    ? practiceText.split('\n').map((line) => line.trim()).filter(Boolean)
     : [];
   const canAutoScroll = scriptParagraphs.length > 0;
 

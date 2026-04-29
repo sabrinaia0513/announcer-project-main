@@ -44,8 +44,13 @@ function ScriptBoard() {
 
   const handleUpload = async (e) => {
     e.preventDefault();
-    if (!title || !content) {
-      alert("제목과 내용을 입력해주세요.");
+    if (!title.trim()) {
+      alert("제목을 입력해주세요.");
+      return;
+    }
+
+    if (!content.trim() && !file && !editingScript?.file_url) {
+      alert("본문을 입력하거나 docx/txt 첨부 파일을 선택해주세요.");
       return;
     }
 
@@ -161,7 +166,7 @@ function ScriptBoard() {
                 <div>
                   <label className="mb-2 block text-xs font-bold text-slate-600">대본 본문</label>
                   <textarea
-                    placeholder="대본 본문 내용을 입력하세요"
+                    placeholder="대본 본문 내용을 입력하세요. docx/txt 첨부만으로도 프롬프터 원고를 만들 수 있습니다."
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                     rows="8"
@@ -177,7 +182,8 @@ function ScriptBoard() {
                     className="w-full text-sm text-slate-500 file:mr-4 file:rounded-full file:border-0 file:bg-sky-100 file:px-4 file:py-2 file:font-semibold file:text-sky-700 hover:file:bg-sky-200"
                   />
                   {editingScript?.file_url && <p className="mt-2 text-xs text-slate-400">현재 첨부 파일이 있습니다. 새 파일을 선택하면 교체됩니다.</p>}
-                  <p className="mt-2 text-xs text-slate-400">첨부가 없어도 본문만으로 등록할 수 있습니다.</p>
+                  <p className="mt-2 text-xs text-slate-400">docx 또는 txt 파일을 첨부하면 프롬프터 연습 화면에서 파일 내용을 우선 사용합니다.</p>
+                  <p className="mt-1 text-xs text-slate-400">첨부가 없어도 본문만으로 등록할 수 있습니다.</p>
                 </div>
                 <div className="flex flex-col gap-3 sm:flex-row">
                   <button type="submit" disabled={isUploading} className={`w-full rounded-2xl px-5 py-4 text-sm font-bold text-white transition-all ${isUploading ? 'bg-slate-400' : 'bg-blue-600 hover:-translate-y-0.5 hover:bg-blue-700'}`}>
@@ -220,7 +226,7 @@ function ScriptBoard() {
                 </div>
 
                 <div className="mt-5 rounded-[1.5rem] bg-slate-50 p-4 text-sm leading-7 text-slate-700 sm:p-5">
-                  <p className="whitespace-pre-wrap break-keep">{script.content}</p>
+                  <p className="whitespace-pre-wrap break-keep">{script.content || script.prompt_content || '본문 없이 첨부 파일 원고만 등록된 대본입니다.'}</p>
                 </div>
 
                 <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
