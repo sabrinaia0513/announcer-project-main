@@ -119,9 +119,9 @@ function ScriptPracticePage() {
   }, [selectedScript?.id]);
 
   const scriptParagraphs = editableScriptText
-    ? editableScriptText.split('\n').map((line) => line.trim()).filter(Boolean)
+    ? editableScriptText.replace(/\r/g, '').split('\n')
     : [];
-  const canAutoScroll = scriptParagraphs.length > 0;
+  const canAutoScroll = scriptParagraphs.some((line) => line.trim().length > 0);
   const effectiveScrollSpeed = MIN_SCROLL_SPEED + scrollLevel;
 
   useEffect(() => {
@@ -365,10 +365,10 @@ function ScriptPracticePage() {
   };
 
   const teleprompterStatus = !canAutoScroll
-    ? 'TEXT EMPTY'
+    ? '원고 없음'
     : isPlaying
-      ? 'SCROLLING'
-      : 'READY';
+      ? '재생 중'
+      : '준비 완료';
   const shellClassName = isFocusMode
     ? 'fixed inset-0 z-[70] overflow-hidden bg-slate-950'
     : 'space-y-4 pb-32 sm:pb-40 xl:space-y-5';
@@ -393,11 +393,10 @@ function ScriptPracticePage() {
         <div className="absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_top_right,_rgba(56,189,248,0.35),_transparent_55%)]" />
         <div className="relative z-10 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.32em] text-sky-200">Reading Practice Mode</p>
-            <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
               <h1 className="text-2xl font-black tracking-tight sm:text-3xl">카메라 리딩 프롬프터</h1>
-              <div className="inline-flex self-start rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-200">
-                {selectedScript ? `대본 #${selectedScript.id}` : 'NO SCRIPT'}
+              <div className="inline-flex self-start rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[11px] font-bold tracking-[0.08em] text-slate-200">
+                {selectedScript ? `대본 #${selectedScript.id}` : '대본 없음'}
               </div>
             </div>
             <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-200 sm:text-base">
@@ -433,13 +432,6 @@ function ScriptPracticePage() {
 
       <section className={`relative overflow-hidden border border-slate-200 bg-slate-950 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.9)] ${isFocusMode ? 'h-[100dvh] rounded-none border-0 shadow-none' : 'rounded-[1.75rem] sm:rounded-[2rem] xl:h-[calc(100vh-10rem)] xl:min-h-[44rem]'}`}>
         <div className={`relative ${isFocusMode ? 'h-[100dvh]' : 'h-[78svh] min-h-[32rem] max-h-[58rem] sm:h-[80svh] xl:h-full'}`}>
-          {!isFocusMode && (
-          <div className="absolute inset-x-0 top-0 z-20 flex items-center justify-between bg-gradient-to-b from-black/80 via-black/35 to-transparent px-4 py-4 text-[11px] font-bold uppercase tracking-[0.24em] text-white/85 sm:px-6 sm:py-5">
-            <span>ON AIR PRACTICE</span>
-            <span>{cameraEnabled ? 'CAM READY' : 'CAM OFF'}</span>
-          </div>
-          )}
-
           {cameraEnabled ? (
             <video
               ref={videoRef}
@@ -449,13 +441,7 @@ function ScriptPracticePage() {
               className={`absolute inset-0 h-full w-full object-cover ${mirrored ? 'scale-x-[-1]' : ''}`}
             />
           ) : (
-            <div className="absolute inset-0 flex items-center justify-center bg-[radial-gradient(circle_at_top,_rgba(14,165,233,0.22),_transparent_42%),linear-gradient(135deg,#020617,#111827_45%,#0f172a)] px-6 text-center text-slate-300">
-              <div>
-                <p className="text-sm font-bold uppercase tracking-[0.3em] text-sky-300">Camera Preview</p>
-                <p className="mt-4 text-2xl font-black text-white sm:text-3xl">카메라를 켜면 이 영역 전체가 프롬프터 화면이 됩니다.</p>
-                <p className="mt-3 text-sm leading-6 text-slate-300 sm:text-base">모바일과 PC 모두에서 가능한 한 크게 원고가 보이도록 카메라 위에 바로 텍스트를 띄웁니다.</p>
-              </div>
-            </div>
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(14,165,233,0.22),_transparent_42%),linear-gradient(135deg,#020617,#111827_45%,#0f172a)]" />
           )}
 
           <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-32 bg-gradient-to-b from-black/70 via-black/25 to-transparent sm:h-36" />
@@ -488,16 +474,14 @@ function ScriptPracticePage() {
                     <div className="space-y-4 leading-[1.45] sm:space-y-5 sm:leading-[1.55]">
                       {scriptParagraphs.map((line, index) => (
                         <p key={`${selectedScript?.id || 'manual'}-${index}`} className="whitespace-pre-wrap break-keep">
-                          {line}
+                          {line || '\u00A0'}
                         </p>
                       ))}
                     </div>
                     <div className={`${isFocusMode ? 'h-[86svh]' : 'h-[82svh] sm:h-[66svh]'}`} />
                   </div>
                 ) : (
-                  <div className="flex h-full items-center justify-center text-center text-sm font-semibold text-slate-300 sm:text-base">
-                    선택된 원고가 없습니다.
-                  </div>
+                  <div className="h-full" />
                 )}
               </div>
             </div>
