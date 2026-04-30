@@ -19,13 +19,15 @@ function ScriptPracticePage() {
   const teleprompterRef = useRef(null);
   const streamRef = useRef(null);
   const remoteDragStateRef = useRef({ startLift: 0, startY: 0 });
-  const [scripts, setScripts] = useState([]);
   const [selectedScript, setSelectedScript] = useState(location.state?.script || null);
+  const [editableScriptText, setEditableScriptText] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isCompactViewport, setIsCompactViewport] = useState(false);
+  const [isRemoteVisible, setIsRemoteVisible] = useState(true);
   const [isRemoteExpanded, setIsRemoteExpanded] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [isDraggingRemote, setIsDraggingRemote] = useState(false);
+  const [isDraggingPrompt, setIsDraggingPrompt] = useState(false);
   const [remoteLift, setRemoteLift] = useState(0);
   const [cameraEnabled, setCameraEnabled] = useState(false);
   const [cameraError, setCameraError] = useState('');
@@ -36,6 +38,7 @@ function ScriptPracticePage() {
   const [mirrored, setMirrored] = useState(true);
   const hasInitializedMobileDefaultsRef = useRef(false);
   const hasInitializedRemoteLayoutRef = useRef(false);
+  const promptDragStateRef = useRef({ startY: 0, startScrollTop: 0 });
 
   const currentUser = useMemo(() => {
     const savedUser = localStorage.getItem('announcer_user');
@@ -86,7 +89,6 @@ function ScriptPracticePage() {
           ? availableScripts.find((item) => item.id === targetId) || null
           : availableScripts.find((item) => item.id === stateScript?.id) || stateScript || availableScripts[0] || null;
 
-        setScripts(availableScripts);
         setSelectedScript(nextScript);
       } catch (error) {
         if (!ignore) {
@@ -107,15 +109,17 @@ function ScriptPracticePage() {
   }, [currentUser, location.state, scriptId]);
 
   useEffect(() => {
+    const nextPracticeText = selectedScript?.prompt_content || selectedScript?.content || '';
+
+    setEditableScriptText(nextPracticeText);
     if (teleprompterRef.current) {
       teleprompterRef.current.scrollTop = 0;
     }
     setIsPlaying(false);
   }, [selectedScript?.id]);
 
-  const practiceText = selectedScript?.prompt_content || selectedScript?.content || '';
-  const scriptParagraphs = practiceText
-    ? practiceText.split('\n').map((line) => line.trim()).filter(Boolean)
+  const scriptParagraphs = editableScriptText
+    ? editableScriptText.split('\n').map((line) => line.trim()).filter(Boolean)
     : [];
   const canAutoScroll = scriptParagraphs.length > 0;
   const effectiveScrollSpeed = MIN_SCROLL_SPEED + scrollLevel;
@@ -137,12 +141,14 @@ function ScriptPracticePage() {
 
     const applyRemoteLayout = (matches) => {
       if (!hasInitializedRemoteLayoutRef.current) {
+        setIsRemoteVisible(true);
         setIsRemoteExpanded(false);
         setRemoteLift(0);
         hasInitializedRemoteLayoutRef.current = true;
         return;
       }
 
+      setIsRemoteVisible(true);
       setIsRemoteExpanded(false);
       setRemoteLift(0);
     };
@@ -223,7 +229,7 @@ function ScriptPracticePage() {
   }, [cameraEnabled]);
 
   useEffect(() => {
-    if (!isPlaying || !selectedScript || !canAutoScroll) return undefined;
+    if (!isPlaying || !canAutoScroll) return undefined;
 
     let animationFrameId = 0;
     let previousTime = performance.now();
@@ -254,7 +260,7 @@ function ScriptPracticePage() {
     return () => {
       window.cancelAnimationFrame(animationFrameId);
     };
-  }, [canAutoScroll, effectiveScrollSpeed, isPlaying, selectedScript]);
+  }, [canAutoScroll, effectiveScrollSpeed, isPlaying]);
 
   useEffect(() => () => stopCameraStream(), []);
 
@@ -281,14 +287,33 @@ function ScriptPracticePage() {
     };
   }, [isDraggingRemote]);
 
-  const handleScriptChange = (event) => {
-    const nextScriptId = Number(event.target.value);
-    const nextScript = scripts.find((item) => item.id === nextScriptId);
-    if (!nextScript) return;
+  useEffect(() => {
+    if (!isDraggingPrompt) return undefined;
 
-    setSelectedScript(nextScript);
-    navigate(`/scripts/practice/${nextScript.id}`, { replace: true, state: { script: nextScript } });
-  };
+    const handlePointerMove = (event) => {
+      const container = teleprompterRef.current;
+      if (!container) return;
+
+      const deltaY = event.clientY - promptDragStateRef.current.startY;
+      const maxScrollTop = Math.max(container.scrollHeight - container.clientHeight, 0);
+      const nextScrollTop = clamp(promptDragStateRef.current.startScrollTop - deltaY, 0, maxScrollTop);
+      container.scrollTop = nextScrollTop;
+    };
+
+    const handlePointerUp = () => {
+      setIsDraggingPrompt(false);
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('pointercancel', handlePointerUp);
+
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerUp);
+    };
+  }, [isDraggingPrompt]);
 
   const handleRestart = () => {
     if (teleprompterRef.current) {
@@ -298,12 +323,23 @@ function ScriptPracticePage() {
   };
 
   const handleTogglePlay = () => {
-    if (!selectedScript || !canAutoScroll) return;
+    if (!canAutoScroll) return;
     setIsPlaying((prev) => !prev);
   };
 
   const handleToggleFocusMode = () => {
     setIsFocusMode((prev) => !prev);
+  };
+
+  const handlePromptDragStart = (event) => {
+    if (!teleprompterRef.current) return;
+
+    promptDragStateRef.current = {
+      startY: event.clientY,
+      startScrollTop: teleprompterRef.current.scrollTop,
+    };
+    setIsPlaying(false);
+    setIsDraggingPrompt(true);
   };
 
   const handleRemoteDragStart = (event) => {
@@ -328,23 +364,25 @@ function ScriptPracticePage() {
     setOverlayOpacity((prev) => clamp(prev + delta, 60, 100));
   };
 
-  const teleprompterStatus = !selectedScript
-    ? 'NO SCRIPT'
+  const teleprompterStatus = !canAutoScroll
+    ? 'TEXT EMPTY'
     : isPlaying
       ? 'SCROLLING'
-      : canAutoScroll
-        ? 'READY'
-        : 'TEXT READY';
+      : 'READY';
   const shellClassName = isFocusMode
     ? 'fixed inset-0 z-[70] overflow-hidden bg-slate-950'
     : 'space-y-4 pb-32 sm:pb-40 xl:space-y-5';
   const teleprompterPaddingClass = isFocusMode
-    ? isRemoteExpanded
-      ? 'pb-32 pt-8 sm:pb-36 sm:pt-10'
-      : 'pb-20 pt-8 sm:pb-24 sm:pt-10'
-    : isRemoteExpanded
-      ? 'pb-36 pt-16 sm:pb-40 sm:pt-20'
-      : 'pb-24 pt-16 sm:pb-28 sm:pt-20';
+    ? isRemoteVisible
+      ? isRemoteExpanded
+        ? 'pb-32 pt-8 sm:pb-36 sm:pt-10'
+        : 'pb-20 pt-8 sm:pb-24 sm:pt-10'
+      : 'pb-10 pt-8 sm:pb-12 sm:pt-10'
+    : isRemoteVisible
+      ? isRemoteExpanded
+        ? 'pb-36 pt-16 sm:pb-40 sm:pt-20'
+        : 'pb-24 pt-16 sm:pb-28 sm:pt-20'
+      : 'pb-12 pt-16 sm:pb-16 sm:pt-20';
   const remoteBaseOffset = isFocusMode ? 0 : isCompactViewport ? 2 : 8;
   const remoteBottomOffset = `calc(env(safe-area-inset-bottom, 0px) + ${remoteBaseOffset + remoteLift}px)`;
 
@@ -431,7 +469,12 @@ function ScriptPracticePage() {
                 <span>{teleprompterStatus}</span>
               </div>
               )}
-              <div ref={teleprompterRef} className="min-h-0 flex-1 overflow-hidden">
+              <div
+                ref={teleprompterRef}
+                className={`min-h-0 flex-1 overflow-hidden ${isDraggingPrompt ? 'cursor-grabbing' : 'cursor-grab'}`}
+                onPointerDown={handlePromptDragStart}
+                style={{ touchAction: 'none' }}
+              >
                 {scriptParagraphs.length > 0 ? (
                   <div
                     className="w-full pr-1 text-center font-black tracking-tight text-white sm:pr-2"
@@ -444,7 +487,7 @@ function ScriptPracticePage() {
                     <div className={`${isFocusMode ? 'h-[10svh]' : 'h-[10svh] sm:h-[8svh]'}`} />
                     <div className="space-y-4 leading-[1.45] sm:space-y-5 sm:leading-[1.55]">
                       {scriptParagraphs.map((line, index) => (
-                        <p key={`${selectedScript.id}-${index}`} className="whitespace-pre-wrap break-keep">
+                        <p key={`${selectedScript?.id || 'manual'}-${index}`} className="whitespace-pre-wrap break-keep">
                           {line}
                         </p>
                       ))}
@@ -462,14 +505,35 @@ function ScriptPracticePage() {
         </div>
       </section>
 
+      {!isFocusMode && (
+        <section className="rounded-[1.75rem] border border-slate-200 bg-white px-4 py-4 shadow-[0_24px_80px_-52px_rgba(15,23,42,0.35)] sm:rounded-[2rem] sm:px-6 sm:py-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-black text-slate-950">프롬프트 원고 편집</p>
+              <p className="mt-1 text-sm text-slate-500">오늘의 원고를 아래 텍스트 칸에 채워 두고, 바로 수정한 내용이 프롬프트에 반영되게 했습니다.</p>
+            </div>
+            <div className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-600">
+              {scriptParagraphs.length > 0 ? `${scriptParagraphs.length}문단` : '원고 없음'}
+            </div>
+          </div>
+          <textarea
+            value={editableScriptText}
+            onChange={(event) => setEditableScriptText(event.target.value)}
+            placeholder="여기에서 프롬프트 원고를 직접 수정하세요"
+            className="mt-4 min-h-[13rem] w-full rounded-[1.4rem] border border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-7 text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-sky-400 focus:bg-white"
+          />
+        </section>
+      )}
+
       {cameraError && (
         <div className="rounded-[1.5rem] border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-semibold text-amber-800">
           {cameraError}
         </div>
       )}
 
+      {isRemoteVisible ? (
       <div
-        className={`fixed left-1/2 z-[80] -translate-x-1/2 border border-slate-200/90 bg-white/92 text-slate-950 shadow-2xl backdrop-blur-xl transition-all ${isRemoteExpanded ? 'w-[calc(100vw-0.75rem)] rounded-[1.35rem] p-3 sm:w-[min(92vw,70rem)] sm:rounded-[1.6rem] sm:p-3.5' : 'w-[calc(100vw-0.75rem)] rounded-[1.15rem] p-2.5 sm:w-[min(90vw,72rem)] sm:rounded-[1.35rem] sm:p-3'}`}
+        className={`fixed left-1/2 z-[80] -translate-x-1/2 border border-slate-200/90 bg-white/92 text-slate-950 shadow-2xl backdrop-blur-xl transition-all ${isRemoteExpanded ? 'w-[calc(100vw-0.75rem)] rounded-[1.35rem] p-3 sm:w-[min(92vw,64rem)] sm:rounded-[1.6rem] sm:p-3.5' : 'w-[calc(100vw-0.75rem)] rounded-[1.1rem] p-2 sm:w-[min(88vw,56rem)] sm:rounded-[1.2rem] sm:p-2.5'}`}
         style={{ bottom: remoteBottomOffset }}
       >
         {isCompactViewport && (
@@ -485,11 +549,23 @@ function ScriptPracticePage() {
             </button>
           </div>
         )}
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0 text-sm font-bold text-slate-900">
-            <span className="block truncate">{selectedScript?.title || '대본 선택 필요'}</span>
-          </div>
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 overflow-x-auto">
+            <button
+              type="button"
+              onClick={handleTogglePlay}
+              disabled={!canAutoScroll}
+              className={`rounded-full px-3 py-2 text-xs font-bold transition-colors sm:px-4 ${selectedScript && canAutoScroll ? 'bg-sky-400 text-slate-950 hover:bg-sky-300' : 'bg-slate-200 text-slate-400'}`}
+            >
+              {isPlaying ? '정지' : '시작'}
+            </button>
+            <button
+              type="button"
+              onClick={handleRestart}
+              className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-900 transition-colors hover:bg-slate-100 disabled:text-slate-400 sm:px-4"
+            >
+              처음부터
+            </button>
             <button
               type="button"
               onClick={() => setIsRemoteExpanded((prev) => !prev)}
@@ -504,59 +580,20 @@ function ScriptPracticePage() {
             >
               {isFocusMode ? '기본 화면' : '집중 모드'}
             </button>
+            <button
+              type="button"
+              onClick={() => setIsRemoteVisible(false)}
+              className="rounded-full border border-slate-200 bg-slate-100 px-3 py-2 text-xs font-bold text-slate-900 transition-colors hover:bg-slate-200"
+            >
+              숨기기
+            </button>
           </div>
         </div>
-        <div className={`mt-2 ${isCompactViewport ? 'space-y-2' : 'grid gap-2 lg:grid-cols-[minmax(0,16rem)_minmax(0,1.6fr)_minmax(7.5rem,0.7fr)_minmax(8.5rem,0.8fr)] lg:items-stretch'}`}>
-          <label className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5">
-            <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">연습 대본</span>
-            <select
-              value={selectedScript?.id || ''}
-              onChange={handleScriptChange}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 outline-none transition-colors hover:border-slate-300 focus:border-sky-400"
-              disabled={isLoading || scripts.length === 0}
-            >
-              {scripts.length === 0 ? (
-                <option value="">등록된 대본이 없습니다</option>
-              ) : (
-                scripts.map((script) => (
-                  <option key={script.id} value={script.id}>{script.title}</option>
-                ))
-              )}
-            </select>
-          </label>
-
-          <div className="rounded-2xl border border-sky-200 bg-sky-50 px-3 py-2.5">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-black text-slate-950">속도 조절</p>
-                <p className="mt-0.5 text-[11px] font-medium text-slate-500">프롬프트 가림을 줄이기 위해 핵심 조절만 먼저 배치</p>
-              </div>
-              <div className="rounded-full bg-white px-3 py-1 text-sm font-black text-sky-700 shadow-sm">{scrollLevel}</div>
-            </div>
-            <div className="mt-2.5 flex items-center gap-2">
-              <button type="button" onClick={() => adjustScrollLevel(-5)} className="h-9 w-9 rounded-full border border-sky-200 bg-white text-lg font-black text-slate-900 transition-colors hover:bg-sky-100 sm:h-10 sm:w-10">-</button>
-              <input type="range" min="0" max="100" step="1" value={scrollLevel} onChange={(event) => setScrollLevel(Number(event.target.value))} className="w-full accent-sky-500" />
-              <button type="button" onClick={() => adjustScrollLevel(5)} className="h-9 w-9 rounded-full border border-sky-200 bg-white text-lg font-black text-slate-900 transition-colors hover:bg-sky-100 sm:h-10 sm:w-10">+</button>
-            </div>
+        <div className="mt-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+          <div className="flex items-center gap-3 text-xs font-bold text-slate-700">
+            <span className="shrink-0">속도 {scrollLevel}</span>
+            <input type="range" min="0" max="100" step="1" value={scrollLevel} onChange={(event) => setScrollLevel(Number(event.target.value))} className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-slate-300 accent-sky-500" />
           </div>
-
-          <button
-            type="button"
-            onClick={handleTogglePlay}
-            disabled={!selectedScript || !canAutoScroll}
-            className={`rounded-2xl px-4 py-3 text-sm font-bold transition-colors ${selectedScript && canAutoScroll ? 'bg-sky-400 text-slate-950 hover:bg-sky-300' : 'bg-slate-200 text-slate-400'}`}
-          >
-            {isPlaying ? '스크롤 정지' : '스크롤 시작'}
-          </button>
-
-          <button
-            type="button"
-            onClick={handleRestart}
-            disabled={!selectedScript}
-            className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-900 transition-colors hover:bg-slate-100 disabled:text-slate-400"
-          >
-            처음부터 다시 보기
-          </button>
         </div>
 
         {isRemoteExpanded && (
@@ -593,6 +630,15 @@ function ScriptPracticePage() {
           </div>
         )}
       </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setIsRemoteVisible(true)}
+          className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] left-1/2 z-[80] -translate-x-1/2 rounded-full border border-slate-200 bg-white/92 px-4 py-2 text-xs font-bold text-slate-900 shadow-xl backdrop-blur-xl transition-colors hover:bg-white"
+        >
+          리모컨 열기
+        </button>
+      )}
     </div>
   );
 }
