@@ -20,6 +20,9 @@ function ScriptPracticePage() {
   const [scripts, setScripts] = useState([]);
   const [selectedScript, setSelectedScript] = useState(location.state?.script || null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCompactViewport, setIsCompactViewport] = useState(false);
+  const [isRemoteExpanded, setIsRemoteExpanded] = useState(true);
+  const [isFocusMode, setIsFocusMode] = useState(false);
   const [cameraEnabled, setCameraEnabled] = useState(false);
   const [cameraError, setCameraError] = useState('');
   const [isPlaying, setIsPlaying] = useState(false);
@@ -28,6 +31,7 @@ function ScriptPracticePage() {
   const [overlayOpacity, setOverlayOpacity] = useState(96);
   const [mirrored, setMirrored] = useState(true);
   const hasInitializedMobileDefaultsRef = useRef(false);
+  const hasInitializedRemoteLayoutRef = useRef(false);
 
   const currentUser = useMemo(() => {
     const savedUser = localStorage.getItem('announcer_user');
@@ -115,9 +119,11 @@ function ScriptPracticePage() {
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
 
-    const mediaQuery = window.matchMedia('(max-width: 639px)');
+    const mediaQuery = window.matchMedia('(max-width: 767px)');
 
     const applyMobileDefaults = (matches) => {
+      setIsCompactViewport(matches);
+
       if (!matches || hasInitializedMobileDefaultsRef.current) return;
 
       setFontSize((prev) => (prev === 36 ? 28 : prev));
@@ -125,10 +131,24 @@ function ScriptPracticePage() {
       hasInitializedMobileDefaultsRef.current = true;
     };
 
+    const applyRemoteLayout = (matches) => {
+      if (!hasInitializedRemoteLayoutRef.current) {
+        setIsRemoteExpanded(!matches);
+        hasInitializedRemoteLayoutRef.current = true;
+        return;
+      }
+
+      if (!matches) {
+        setIsRemoteExpanded(true);
+      }
+    };
+
     applyMobileDefaults(mediaQuery.matches);
+    applyRemoteLayout(mediaQuery.matches);
 
     const handleMediaQueryChange = (event) => {
       applyMobileDefaults(event.matches);
+      applyRemoteLayout(event.matches);
     };
 
     if (mediaQuery.addEventListener) {
@@ -255,6 +275,10 @@ function ScriptPracticePage() {
     setIsPlaying((prev) => !prev);
   };
 
+  const handleToggleFocusMode = () => {
+    setIsFocusMode((prev) => !prev);
+  };
+
   const adjustScrollLevel = (delta) => {
     setScrollLevel((prev) => clamp(prev + delta, 0, MAX_SCROLL_LEVEL));
   };
@@ -274,9 +298,18 @@ function ScriptPracticePage() {
       : canAutoScroll
         ? 'READY'
         : 'TEXT READY';
+  const shellClassName = isFocusMode
+    ? 'fixed inset-0 z-[70] overflow-hidden bg-slate-950'
+    : 'space-y-4 pb-32 sm:pb-40 xl:space-y-5';
+  const remoteBottomOffset = isFocusMode
+    ? 'calc(env(safe-area-inset-bottom, 0px) + 0.35rem)'
+    : isCompactViewport
+      ? 'calc(env(safe-area-inset-bottom, 0px) + 0.35rem)'
+      : 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)';
 
   return (
-    <div className="space-y-4 pb-48 sm:pb-56 xl:space-y-5">
+    <div className={shellClassName}>
+      {!isFocusMode && (
       <section className="relative overflow-hidden rounded-[1.75rem] bg-slate-900 px-4 py-4 text-white shadow-[0_24px_80px_-48px_rgba(15,23,42,0.9)] sm:rounded-[2rem] sm:px-6 sm:py-5 xl:px-8">
         <div className="absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_top_right,_rgba(56,189,248,0.35),_transparent_55%)]" />
         <div className="relative z-10 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
@@ -307,12 +340,20 @@ function ScriptPracticePage() {
             >
               {cameraEnabled ? '카메라 끄기' : '카메라 켜기'}
             </button>
+            <button
+              type="button"
+              onClick={handleToggleFocusMode}
+              className="rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-white/15"
+            >
+              집중 모드
+            </button>
           </div>
         </div>
       </section>
+      )}
 
-      <section className="relative overflow-hidden rounded-[1.75rem] border border-slate-200 bg-slate-950 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.9)] sm:rounded-[2rem] xl:h-[calc(100vh-10rem)] xl:min-h-[44rem]">
-        <div className="relative h-[calc(100vh-14rem)] min-h-[32rem] sm:h-[calc(100vh-15rem)] xl:h-full">
+      <section className={`relative overflow-hidden border border-slate-200 bg-slate-950 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.9)] ${isFocusMode ? 'h-[100svh] rounded-none border-0 shadow-none' : 'rounded-[1.75rem] sm:rounded-[2rem] xl:h-[calc(100vh-10rem)] xl:min-h-[44rem]'}`}>
+        <div className={`relative ${isFocusMode ? 'h-[100svh]' : 'h-[78svh] min-h-[32rem] max-h-[58rem] sm:h-[80svh] xl:h-full'}`}>
           <div className="absolute inset-x-0 top-0 z-20 flex items-center justify-between bg-gradient-to-b from-black/80 via-black/35 to-transparent px-4 py-4 text-[11px] font-bold uppercase tracking-[0.24em] text-white/85 sm:px-6 sm:py-5">
             <span>ON AIR PRACTICE</span>
             <span>{cameraEnabled ? 'CAM READY' : 'CAM OFF'}</span>
@@ -339,7 +380,7 @@ function ScriptPracticePage() {
           <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-32 bg-gradient-to-b from-black/70 via-black/25 to-transparent sm:h-36" />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-40 bg-gradient-to-t from-black/80 via-black/25 to-transparent sm:h-48" />
 
-          <div className="absolute inset-0 z-20 px-4 pb-28 pt-16 sm:px-8 sm:pb-36 sm:pt-20 lg:px-12">
+          <div className={`absolute inset-0 z-20 px-4 pt-16 sm:px-8 sm:pt-20 lg:px-12 ${isFocusMode ? 'pb-28 sm:pb-36' : 'pb-24 sm:pb-28'}`}>
             <div className="flex h-full flex-col text-white">
               <div className="mb-3 flex flex-col gap-2 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-200 sm:mb-4 sm:flex-row sm:items-center sm:justify-between">
                 <span>{selectedScript?.title || '원고를 선택해 주세요'}</span>
@@ -355,7 +396,7 @@ function ScriptPracticePage() {
                       textShadow: '0 2px 10px rgba(2, 6, 23, 0.98), 0 0 22px rgba(2, 6, 23, 0.92), 0 0 42px rgba(2, 6, 23, 0.68)',
                     }}
                   >
-                    <div className="h-[12vh] sm:h-[9vh]" />
+                    <div className={`${isFocusMode ? 'h-[10svh]' : 'h-[10svh] sm:h-[8svh]'}`} />
                     <div className="space-y-4 leading-[1.45] sm:space-y-5 sm:leading-[1.55]">
                       {scriptParagraphs.map((line, index) => (
                         <p key={`${selectedScript.id}-${index}`} className="whitespace-pre-wrap break-keep">
@@ -363,7 +404,7 @@ function ScriptPracticePage() {
                         </p>
                       ))}
                     </div>
-                    <div className="h-[74vh] sm:h-[62vh]" />
+                    <div className={`${isFocusMode ? 'h-[86svh]' : 'h-[82svh] sm:h-[66svh]'}`} />
                   </div>
                 ) : (
                   <div className="flex h-full items-center justify-center text-center text-sm font-semibold text-slate-300 sm:text-base">
@@ -383,10 +424,69 @@ function ScriptPracticePage() {
       )}
 
       <div
-        className="fixed left-1/2 z-40 w-[calc(100vw-1rem)] max-w-6xl -translate-x-1/2 rounded-[1.5rem] border border-white/15 bg-slate-950/88 p-3 text-white shadow-2xl backdrop-blur-xl sm:w-[calc(100vw-2rem)] sm:rounded-[1.75rem] sm:p-4"
-        style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)' }}
+        className={`fixed left-1/2 z-[80] -translate-x-1/2 border border-white/15 bg-slate-950/88 text-white shadow-2xl backdrop-blur-xl transition-all ${isRemoteExpanded || !isCompactViewport ? 'w-[calc(100vw-0.75rem)] rounded-[1.35rem] p-3 sm:w-[calc(100vw-2rem)] sm:max-w-6xl sm:rounded-[1.75rem] sm:p-4' : 'w-[calc(100vw-0.75rem)] rounded-[1.2rem] p-2.5'}`}
+        style={{ bottom: remoteBottomOffset }}
       >
-        <div className="max-h-[42vh] space-y-3 overflow-y-auto lg:max-h-none">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2 text-sm font-bold text-slate-200">
+            <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-[11px] uppercase tracking-[0.22em] text-sky-300">Remote</span>
+            <span className="truncate">{selectedScript?.title || '대본 선택 필요'}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            {isCompactViewport && (
+              <button
+                type="button"
+                onClick={() => setIsRemoteExpanded((prev) => !prev)}
+                className="rounded-full border border-white/10 bg-white/10 px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-white/15"
+              >
+                {isRemoteExpanded ? '접기' : '펼치기'}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={handleToggleFocusMode}
+              className="rounded-full border border-white/10 bg-white/10 px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-white/15"
+            >
+              {isFocusMode ? '기본 화면' : '집중 모드'}
+            </button>
+          </div>
+        </div>
+
+        {isCompactViewport && !isRemoteExpanded ? (
+          <div className="mt-3 grid grid-cols-4 gap-2">
+            <button
+              type="button"
+              onClick={handleTogglePlay}
+              disabled={!selectedScript || !canAutoScroll}
+              className={`rounded-2xl px-3 py-3 text-xs font-bold transition-colors ${selectedScript && canAutoScroll ? 'bg-sky-400 text-slate-950 hover:bg-sky-300' : 'bg-white/10 text-slate-400'}`}
+            >
+              {isPlaying ? '정지' : '시작'}
+            </button>
+            <button
+              type="button"
+              onClick={handleRestart}
+              disabled={!selectedScript}
+              className="rounded-2xl border border-white/10 bg-white/5 px-3 py-3 text-xs font-bold text-white transition-colors hover:bg-white/10 disabled:text-slate-500"
+            >
+              리셋
+            </button>
+            <button
+              type="button"
+              onClick={() => setCameraEnabled((prev) => !prev)}
+              className={`rounded-2xl px-3 py-3 text-xs font-bold transition-colors ${cameraEnabled ? 'bg-white text-slate-950 hover:bg-slate-100' : 'bg-white/5 text-white hover:bg-white/10'}`}
+            >
+              {cameraEnabled ? '카메라 OFF' : '카메라 ON'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setMirrored((prev) => !prev)}
+              className="rounded-2xl border border-white/10 bg-white/5 px-3 py-3 text-xs font-bold text-white transition-colors hover:bg-white/10"
+            >
+              반전
+            </button>
+          </div>
+        ) : (
+        <div className="mt-3 max-h-[38vh] space-y-3 overflow-y-auto lg:max-h-none">
           <div className="grid gap-2 lg:grid-cols-[minmax(0,260px)_repeat(4,minmax(0,1fr))]">
             <label className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
               <span className="mb-2 block text-[11px] font-bold uppercase tracking-[0.22em] text-slate-300">연습 대본</span>
@@ -488,6 +588,7 @@ function ScriptPracticePage() {
             </div>
           </div>
         </div>
+        )}
       </div>
     </div>
   );
