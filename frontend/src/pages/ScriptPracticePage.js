@@ -464,7 +464,7 @@ function ScriptPracticePage() {
       )}
 
       <div
-        className={`fixed left-1/2 z-[80] -translate-x-1/2 border border-white/15 bg-slate-950/88 text-white shadow-2xl backdrop-blur-xl transition-all ${isRemoteExpanded || !isCompactViewport ? 'w-[calc(100vw-0.75rem)] rounded-[1.35rem] p-3 sm:w-[calc(100vw-2rem)] sm:max-w-6xl sm:rounded-[1.75rem] sm:p-4' : 'w-[calc(100vw-0.75rem)] rounded-[1.2rem] p-2.5'}`}
+        className={`fixed left-1/2 z-[80] -translate-x-1/2 border border-slate-200/90 bg-white/94 text-slate-950 shadow-2xl backdrop-blur-xl transition-all ${isRemoteExpanded || !isCompactViewport ? 'w-[calc(100vw-0.75rem)] rounded-[1.35rem] p-3 sm:w-[calc(100vw-2rem)] sm:max-w-6xl sm:rounded-[1.75rem] sm:p-4' : 'w-[calc(100vw-0.75rem)] rounded-[1.2rem] p-2.5'}`}
         style={{ bottom: remoteBottomOffset }}
       >
         {isCompactViewport && (
@@ -472,17 +472,17 @@ function ScriptPracticePage() {
             <button
               type="button"
               onPointerDown={handleRemoteDragStart}
-              className={`flex w-full items-center justify-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-300 transition-colors ${isDraggingRemote ? 'bg-white/14 text-white' : 'bg-white/6 hover:bg-white/10'}`}
+              className={`flex w-full items-center justify-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-600 transition-colors ${isDraggingRemote ? 'bg-slate-200 text-slate-950' : 'bg-slate-100 hover:bg-slate-200'}`}
               style={{ touchAction: 'none' }}
             >
-              <span className="h-1.5 w-10 rounded-full bg-white/40" />
+              <span className="h-1.5 w-10 rounded-full bg-slate-400" />
               <span>드래그로 위치 조절</span>
             </button>
           </div>
         )}
         <div className="flex items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-2 text-sm font-bold text-slate-200">
-            <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-[11px] uppercase tracking-[0.22em] text-sky-300">Remote</span>
+          <div className="flex min-w-0 items-center gap-2 text-sm font-bold text-slate-900">
+            <span className="inline-flex rounded-full bg-sky-100 px-3 py-1 text-[11px] uppercase tracking-[0.22em] text-sky-700">Remote</span>
             <span className="truncate">{selectedScript?.title || '대본 선택 필요'}</span>
           </div>
           <div className="flex items-center gap-2">
@@ -490,7 +490,7 @@ function ScriptPracticePage() {
               <button
                 type="button"
                 onClick={() => setIsRemoteExpanded((prev) => !prev)}
-                className="rounded-full border border-white/10 bg-white/10 px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-white/15"
+                className="rounded-full border border-slate-200 bg-slate-100 px-3 py-2 text-xs font-bold text-slate-900 transition-colors hover:bg-slate-200"
               >
                 {isRemoteExpanded ? '접기' : '펼치기'}
               </button>
@@ -498,7 +498,7 @@ function ScriptPracticePage() {
             <button
               type="button"
               onClick={handleToggleFocusMode}
-              className="rounded-full border border-white/10 bg-white/10 px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-white/15"
+              className="rounded-full border border-slate-200 bg-slate-100 px-3 py-2 text-xs font-bold text-slate-900 transition-colors hover:bg-slate-200"
             >
               {isFocusMode ? '기본 화면' : '집중 모드'}
             </button>
@@ -506,12 +506,28 @@ function ScriptPracticePage() {
         </div>
 
         {isCompactViewport && !isRemoteExpanded ? (
-          <div className="mt-3 grid grid-cols-4 gap-2">
+          <div className="mt-3 space-y-3">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-black text-slate-950">속도 조절</p>
+                  <p className="mt-1 text-xs font-medium text-slate-500">가장 자주 쓰는 조절값</p>
+                </div>
+                <div className="rounded-full bg-sky-100 px-3 py-1 text-sm font-black text-sky-700">{scrollLevel}</div>
+              </div>
+              <div className="mt-3 flex items-center gap-2">
+                <button type="button" onClick={() => adjustScrollLevel(-5)} className="h-10 w-10 rounded-full border border-slate-200 bg-white text-lg font-black text-slate-900 transition-colors hover:bg-slate-100">-</button>
+                <input type="range" min="0" max="100" step="1" value={scrollLevel} onChange={(event) => setScrollLevel(Number(event.target.value))} className="w-full accent-sky-500" />
+                <button type="button" onClick={() => adjustScrollLevel(5)} className="h-10 w-10 rounded-full border border-slate-200 bg-white text-lg font-black text-slate-900 transition-colors hover:bg-slate-100">+</button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-4 gap-2">
             <button
               type="button"
               onClick={handleTogglePlay}
               disabled={!selectedScript || !canAutoScroll}
-              className={`rounded-2xl px-3 py-3 text-xs font-bold transition-colors ${selectedScript && canAutoScroll ? 'bg-sky-400 text-slate-950 hover:bg-sky-300' : 'bg-white/10 text-slate-400'}`}
+              className={`rounded-2xl px-3 py-3 text-xs font-bold transition-colors ${selectedScript && canAutoScroll ? 'bg-sky-400 text-slate-950 hover:bg-sky-300' : 'bg-slate-200 text-slate-400'}`}
             >
               {isPlaying ? '정지' : '시작'}
             </button>
@@ -519,34 +535,50 @@ function ScriptPracticePage() {
               type="button"
               onClick={handleRestart}
               disabled={!selectedScript}
-              className="rounded-2xl border border-white/10 bg-white/5 px-3 py-3 text-xs font-bold text-white transition-colors hover:bg-white/10 disabled:text-slate-500"
+              className="rounded-2xl border border-slate-200 bg-white px-3 py-3 text-xs font-bold text-slate-900 transition-colors hover:bg-slate-100 disabled:text-slate-400"
             >
               리셋
             </button>
             <button
               type="button"
               onClick={() => setCameraEnabled((prev) => !prev)}
-              className={`rounded-2xl px-3 py-3 text-xs font-bold transition-colors ${cameraEnabled ? 'bg-white text-slate-950 hover:bg-slate-100' : 'bg-white/5 text-white hover:bg-white/10'}`}
+              className={`rounded-2xl px-3 py-3 text-xs font-bold transition-colors ${cameraEnabled ? 'bg-slate-900 text-white hover:bg-slate-700' : 'bg-white text-slate-900 hover:bg-slate-100 border border-slate-200'}`}
             >
               {cameraEnabled ? '카메라 OFF' : '카메라 ON'}
             </button>
             <button
               type="button"
               onClick={() => setMirrored((prev) => !prev)}
-              className="rounded-2xl border border-white/10 bg-white/5 px-3 py-3 text-xs font-bold text-white transition-colors hover:bg-white/10"
+              className="rounded-2xl border border-slate-200 bg-white px-3 py-3 text-xs font-bold text-slate-900 transition-colors hover:bg-slate-100"
             >
               반전
             </button>
           </div>
+          </div>
         ) : (
         <div className="mt-3 max-h-[38vh] space-y-3 overflow-y-auto lg:max-h-none">
+          <div className="rounded-[1.6rem] border border-sky-200 bg-sky-50 p-4">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="text-base font-black text-slate-950">속도 조절</p>
+                <p className="mt-1 text-sm font-medium text-slate-600">가장 자주 건드리는 값이라 제일 위에 고정했습니다.</p>
+              </div>
+              <div className="rounded-full bg-white px-4 py-2 text-lg font-black text-sky-700 shadow-sm">{scrollLevel}</div>
+            </div>
+            <div className="mt-4 flex items-center gap-3">
+              <button type="button" onClick={() => adjustScrollLevel(-5)} className="h-12 w-12 rounded-full border border-sky-200 bg-white text-xl font-black text-slate-900 transition-colors hover:bg-sky-100">-</button>
+              <input type="range" min="0" max="100" step="1" value={scrollLevel} onChange={(event) => setScrollLevel(Number(event.target.value))} className="w-full accent-sky-500" />
+              <button type="button" onClick={() => adjustScrollLevel(5)} className="h-12 w-12 rounded-full border border-sky-200 bg-white text-xl font-black text-slate-900 transition-colors hover:bg-sky-100">+</button>
+            </div>
+          </div>
+
           <div className="grid gap-2 lg:grid-cols-[minmax(0,260px)_repeat(4,minmax(0,1fr))]">
-            <label className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-              <span className="mb-2 block text-[11px] font-bold uppercase tracking-[0.22em] text-slate-300">연습 대본</span>
+            <label className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+              <span className="mb-2 block text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">연습 대본</span>
               <select
                 value={selectedScript?.id || ''}
                 onChange={handleScriptChange}
-                className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 text-sm font-semibold text-white outline-none transition-colors hover:border-white/20 focus:border-sky-400"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 outline-none transition-colors hover:border-slate-300 focus:border-sky-400"
                 disabled={isLoading || scripts.length === 0}
               >
                 {scripts.length === 0 ? (
@@ -563,7 +595,7 @@ function ScriptPracticePage() {
               type="button"
               onClick={handleTogglePlay}
               disabled={!selectedScript || !canAutoScroll}
-              className={`rounded-2xl px-4 py-4 text-sm font-bold transition-colors ${selectedScript && canAutoScroll ? 'bg-sky-400 text-slate-950 hover:bg-sky-300' : 'bg-white/10 text-slate-400'}`}
+              className={`rounded-2xl px-4 py-4 text-sm font-bold transition-colors ${selectedScript && canAutoScroll ? 'bg-sky-400 text-slate-950 hover:bg-sky-300' : 'bg-slate-200 text-slate-400'}`}
             >
               {isPlaying ? '스크롤 정지' : '스크롤 시작'}
             </button>
@@ -572,7 +604,7 @@ function ScriptPracticePage() {
               type="button"
               onClick={handleRestart}
               disabled={!selectedScript}
-              className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-sm font-bold text-white transition-colors hover:bg-white/10 disabled:text-slate-500"
+              className="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm font-bold text-slate-900 transition-colors hover:bg-slate-100 disabled:text-slate-400"
             >
               처음부터 다시 보기
             </button>
@@ -580,7 +612,7 @@ function ScriptPracticePage() {
             <button
               type="button"
               onClick={() => setCameraEnabled((prev) => !prev)}
-              className={`rounded-2xl px-4 py-4 text-sm font-bold transition-colors ${cameraEnabled ? 'bg-white text-slate-950 hover:bg-slate-100' : 'bg-white/5 text-white hover:bg-white/10'}`}
+              className={`rounded-2xl px-4 py-4 text-sm font-bold transition-colors ${cameraEnabled ? 'bg-slate-900 text-white hover:bg-slate-700' : 'bg-white text-slate-900 hover:bg-slate-100 border border-slate-200'}`}
             >
               {cameraEnabled ? '카메라 끄기' : '카메라 켜기'}
             </button>
@@ -588,55 +620,55 @@ function ScriptPracticePage() {
             <button
               type="button"
               onClick={() => setMirrored((prev) => !prev)}
-              className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-sm font-bold text-white transition-colors hover:bg-white/10"
+              className="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm font-bold text-slate-900 transition-colors hover:bg-slate-100"
             >
               {mirrored ? '좌우 반전 켜짐' : '좌우 반전 꺼짐'}
             </button>
           </div>
 
           <div className="grid gap-3 lg:grid-cols-3">
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-sm font-bold text-white">스크롤 속도</p>
-                  <p className="mt-1 text-xs text-slate-300">0-100 단계, 내부 기준 {MIN_SCROLL_SPEED}px/s부터 시작</p>
+                  <p className="text-sm font-bold text-slate-900">스크롤 속도 세부 조절</p>
+                  <p className="mt-1 text-xs text-slate-500">0-100 단계, 내부 기준 {MIN_SCROLL_SPEED}px/s부터 시작</p>
                 </div>
-                <div className="rounded-full bg-white/10 px-3 py-1 text-sm font-black text-sky-300">{scrollLevel}</div>
+                <div className="rounded-full bg-white px-3 py-1 text-sm font-black text-sky-700 shadow-sm">{scrollLevel}</div>
               </div>
               <div className="mt-4 flex items-center gap-3">
-                <button type="button" onClick={() => adjustScrollLevel(-5)} className="h-10 w-10 rounded-full border border-white/10 bg-white/10 text-lg font-black text-white transition-colors hover:bg-white/15">-</button>
-                <input type="range" min="0" max="100" step="1" value={scrollLevel} onChange={(event) => setScrollLevel(Number(event.target.value))} className="w-full accent-sky-400" />
-                <button type="button" onClick={() => adjustScrollLevel(5)} className="h-10 w-10 rounded-full border border-white/10 bg-white/10 text-lg font-black text-white transition-colors hover:bg-white/15">+</button>
+                <button type="button" onClick={() => adjustScrollLevel(-5)} className="h-10 w-10 rounded-full border border-slate-200 bg-white text-lg font-black text-slate-900 transition-colors hover:bg-slate-100">-</button>
+                <input type="range" min="0" max="100" step="1" value={scrollLevel} onChange={(event) => setScrollLevel(Number(event.target.value))} className="w-full accent-sky-500" />
+                <button type="button" onClick={() => adjustScrollLevel(5)} className="h-10 w-10 rounded-full border border-slate-200 bg-white text-lg font-black text-slate-900 transition-colors hover:bg-slate-100">+</button>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-sm font-bold text-white">글자 크기</p>
-                  <p className="mt-1 text-xs text-slate-300">화면을 꽉 채우되 가독성은 유지</p>
+                  <p className="text-sm font-bold text-slate-900">글자 크기</p>
+                  <p className="mt-1 text-xs text-slate-500">화면을 꽉 채우되 가독성은 유지</p>
                 </div>
-                <div className="rounded-full bg-white/10 px-3 py-1 text-sm font-black text-sky-300">{fontSize}px</div>
+                <div className="rounded-full bg-white px-3 py-1 text-sm font-black text-sky-700 shadow-sm">{fontSize}px</div>
               </div>
               <div className="mt-4 flex items-center gap-3">
-                <button type="button" onClick={() => adjustFontSize(-2)} className="h-10 w-10 rounded-full border border-white/10 bg-white/10 text-lg font-black text-white transition-colors hover:bg-white/15">-</button>
-                <input type="range" min={MIN_FONT_SIZE} max={MAX_FONT_SIZE} step="1" value={fontSize} onChange={(event) => setFontSize(Number(event.target.value))} className="w-full accent-sky-400" />
-                <button type="button" onClick={() => adjustFontSize(2)} className="h-10 w-10 rounded-full border border-white/10 bg-white/10 text-lg font-black text-white transition-colors hover:bg-white/15">+</button>
+                <button type="button" onClick={() => adjustFontSize(-2)} className="h-10 w-10 rounded-full border border-slate-200 bg-white text-lg font-black text-slate-900 transition-colors hover:bg-slate-100">-</button>
+                <input type="range" min={MIN_FONT_SIZE} max={MAX_FONT_SIZE} step="1" value={fontSize} onChange={(event) => setFontSize(Number(event.target.value))} className="w-full accent-sky-500" />
+                <button type="button" onClick={() => adjustFontSize(2)} className="h-10 w-10 rounded-full border border-slate-200 bg-white text-lg font-black text-slate-900 transition-colors hover:bg-slate-100">+</button>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-sm font-bold text-white">글자 선명도</p>
-                  <p className="mt-1 text-xs text-slate-300">배경 위에서 글자가 또렷하게 보이도록 조절</p>
+                  <p className="text-sm font-bold text-slate-900">글자 선명도</p>
+                  <p className="mt-1 text-xs text-slate-500">배경 위에서 글자가 또렷하게 보이도록 조절</p>
                 </div>
-                <div className="rounded-full bg-white/10 px-3 py-1 text-sm font-black text-sky-300">{overlayOpacity}%</div>
+                <div className="rounded-full bg-white px-3 py-1 text-sm font-black text-sky-700 shadow-sm">{overlayOpacity}%</div>
               </div>
               <div className="mt-4 flex items-center gap-3">
-                <button type="button" onClick={() => adjustOverlayOpacity(-5)} className="h-10 w-10 rounded-full border border-white/10 bg-white/10 text-lg font-black text-white transition-colors hover:bg-white/15">-</button>
-                <input type="range" min="60" max="100" step="1" value={overlayOpacity} onChange={(event) => setOverlayOpacity(Number(event.target.value))} className="w-full accent-sky-400" />
-                <button type="button" onClick={() => adjustOverlayOpacity(5)} className="h-10 w-10 rounded-full border border-white/10 bg-white/10 text-lg font-black text-white transition-colors hover:bg-white/15">+</button>
+                <button type="button" onClick={() => adjustOverlayOpacity(-5)} className="h-10 w-10 rounded-full border border-slate-200 bg-white text-lg font-black text-slate-900 transition-colors hover:bg-slate-100">-</button>
+                <input type="range" min="60" max="100" step="1" value={overlayOpacity} onChange={(event) => setOverlayOpacity(Number(event.target.value))} className="w-full accent-sky-500" />
+                <button type="button" onClick={() => adjustOverlayOpacity(5)} className="h-10 w-10 rounded-full border border-slate-200 bg-white text-lg font-black text-slate-900 transition-colors hover:bg-slate-100">+</button>
               </div>
             </div>
           </div>
