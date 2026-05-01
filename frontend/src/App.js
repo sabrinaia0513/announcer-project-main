@@ -40,6 +40,7 @@ function AppShell({ currentUser, handleLogout, notifications, setNotifications, 
             <Route path="/" element={<HomePage currentUser={currentUser} />} />
             <Route path="/login" element={<LoginPage setCurrentUser={setCurrentUser} />} />
             <Route path="/write" element={<WritePostPage currentUser={currentUser} />} />
+            <Route path="/post/:id/edit" element={<WritePostPage currentUser={currentUser} />} />
             <Route path="/post/:id" element={<PostDetailPage currentUser={currentUser} />} />
             <Route path="/mypage" element={<MyPage currentUser={currentUser} setCurrentUser={setCurrentUser} />} />
             <Route path="/scripts" element={<ScriptBoard />} />
