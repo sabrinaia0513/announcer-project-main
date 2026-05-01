@@ -673,6 +673,7 @@ function ScriptPracticePage() {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-bold text-slate-900">글자 선명도</p>
+                </div>
                 <div className="rounded-full bg-white px-3 py-1 text-sm font-black text-sky-700 shadow-sm">{overlayOpacity}%</div>
               </div>
               <div className="mt-3 flex items-center gap-2">
