@@ -259,15 +259,23 @@ function ScriptPracticePage() {
     }
 
     let cancelled = false;
+    const videoConstraints = isCompactViewport
+      ? {
+          facingMode: 'user',
+          width: { ideal: 960, max: 960 },
+          height: { ideal: 540, max: 540 },
+          frameRate: { ideal: 24, max: 24 },
+        }
+      : {
+          facingMode: 'user',
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        };
 
     const enableCamera = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: 'user',
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-          },
+          video: videoConstraints,
           audio: false,
         });
 
@@ -295,7 +303,7 @@ function ScriptPracticePage() {
       cancelled = true;
       stopCameraStream();
     };
-  }, [cameraEnabled]);
+  }, [cameraEnabled, isCompactViewport]);
 
   useEffect(() => {
     if (!isPlaying || !canAutoScroll) return undefined;
