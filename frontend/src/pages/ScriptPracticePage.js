@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import axios from 'axios';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { BACKEND_URL, getAuthHeader } from '../lib/api';
@@ -17,7 +17,12 @@ function ScriptPracticePage() {
   const { id: scriptId } = useParams();
   const videoRef = useRef(null);
   const teleprompterRef = useRef(null);
+  const promptContentRef = useRef(null);
   const streamRef = useRef(null);
+  const promptAnimationFrameRef = useRef(0);
+  const promptOffsetRef = useRef(0);
+  const promptMaxOffsetRef = useRef(0);
+  const isPlayingRef = useRef(false);
   const remoteDragStateRef = useRef({ startLift: 0, startY: 0 });
   const [selectedScript, setSelectedScript] = useState(location.state?.script || null);
   const [editableScriptText, setEditableScriptText] = useState('');
@@ -63,6 +68,35 @@ function ScriptPracticePage() {
       videoRef.current.srcObject = null;
     }
   };
+
+  const applyPromptOffset = useCallback((nextOffset) => {
+    const clampedOffset = clamp(nextOffset, 0, promptMaxOffsetRef.current);
+    promptOffsetRef.current = clampedOffset;
+
+    if (promptContentRef.current) {
+      promptContentRef.current.style.transform = `translate3d(0, ${-clampedOffset}px, 0)`;
+    }
+
+    return clampedOffset;
+  }, []);
+
+  const measurePromptBounds = useCallback(() => {
+    const container = teleprompterRef.current;
+    const content = promptContentRef.current;
+
+    if (!container || !content) {
+      promptMaxOffsetRef.current = 0;
+      applyPromptOffset(0);
+      return;
+    }
+
+    promptMaxOffsetRef.current = Math.max(content.scrollHeight - container.clientHeight, 0);
+    const appliedOffset = applyPromptOffset(promptOffsetRef.current);
+
+    if (appliedOffset >= promptMaxOffsetRef.current && isPlayingRef.current) {
+      setIsPlaying(false);
+    }
+  }, [applyPromptOffset]);
 
   useEffect(() => {
     if (!currentUser) {
@@ -112,17 +146,52 @@ function ScriptPracticePage() {
     const nextPracticeText = selectedScript?.prompt_content || selectedScript?.content || '';
 
     setEditableScriptText(nextPracticeText);
-    if (teleprompterRef.current) {
-      teleprompterRef.current.scrollTop = 0;
-    }
+    applyPromptOffset(0);
     setIsPlaying(false);
-  }, [selectedScript?.id]);
+  }, [applyPromptOffset, selectedScript?.content, selectedScript?.id, selectedScript?.prompt_content]);
 
   const scriptParagraphs = editableScriptText
     ? editableScriptText.replace(/\r/g, '').split('\n')
     : [];
   const canAutoScroll = scriptParagraphs.some((line) => line.trim().length > 0);
   const effectiveScrollSpeed = MIN_SCROLL_SPEED + scrollLevel;
+
+  useEffect(() => {
+    isPlayingRef.current = isPlaying;
+  }, [isPlaying]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const container = teleprompterRef.current;
+    const content = promptContentRef.current;
+    if (!container || !content) return undefined;
+
+    const scheduleMeasure = () => {
+      window.cancelAnimationFrame(promptAnimationFrameRef.current);
+      promptAnimationFrameRef.current = window.requestAnimationFrame(measurePromptBounds);
+    };
+
+    scheduleMeasure();
+
+    let resizeObserver;
+    if (typeof ResizeObserver !== 'undefined') {
+      resizeObserver = new ResizeObserver(scheduleMeasure);
+      resizeObserver.observe(container);
+      resizeObserver.observe(content);
+    } else {
+      window.addEventListener('resize', scheduleMeasure);
+    }
+
+    return () => {
+      window.cancelAnimationFrame(promptAnimationFrameRef.current);
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      } else {
+        window.removeEventListener('resize', scheduleMeasure);
+      }
+    };
+  }, [editableScriptText, fontSize, isCompactViewport, isFocusMode, isRemoteExpanded, isRemoteVisible, measurePromptBounds]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
@@ -235,19 +304,16 @@ function ScriptPracticePage() {
     let previousTime = performance.now();
 
     const tick = (currentTime) => {
-      const container = teleprompterRef.current;
-      if (!container) {
+      if (!promptContentRef.current) {
         animationFrameId = window.requestAnimationFrame(tick);
         return;
       }
 
       const delta = currentTime - previousTime;
       previousTime = currentTime;
-      const maxScrollTop = Math.max(container.scrollHeight - container.clientHeight, 0);
-      const nextScrollTop = Math.min(container.scrollTop + (effectiveScrollSpeed * delta) / 1000, maxScrollTop);
+      const nextOffset = applyPromptOffset(promptOffsetRef.current + (effectiveScrollSpeed * delta) / 1000);
 
-      container.scrollTop = nextScrollTop;
-      if (nextScrollTop >= maxScrollTop) {
+      if (nextOffset >= promptMaxOffsetRef.current) {
         setIsPlaying(false);
         return;
       }
@@ -260,7 +326,7 @@ function ScriptPracticePage() {
     return () => {
       window.cancelAnimationFrame(animationFrameId);
     };
-  }, [canAutoScroll, effectiveScrollSpeed, isPlaying]);
+  }, [applyPromptOffset, canAutoScroll, effectiveScrollSpeed, isPlaying]);
 
   useEffect(() => () => stopCameraStream(), []);
 
@@ -291,13 +357,8 @@ function ScriptPracticePage() {
     if (!isDraggingPrompt) return undefined;
 
     const handlePointerMove = (event) => {
-      const container = teleprompterRef.current;
-      if (!container) return;
-
       const deltaY = event.clientY - promptDragStateRef.current.startY;
-      const maxScrollTop = Math.max(container.scrollHeight - container.clientHeight, 0);
-      const nextScrollTop = clamp(promptDragStateRef.current.startScrollTop - deltaY, 0, maxScrollTop);
-      container.scrollTop = nextScrollTop;
+      applyPromptOffset(promptDragStateRef.current.startScrollTop - deltaY);
     };
 
     const handlePointerUp = () => {
@@ -313,12 +374,10 @@ function ScriptPracticePage() {
       window.removeEventListener('pointerup', handlePointerUp);
       window.removeEventListener('pointercancel', handlePointerUp);
     };
-  }, [isDraggingPrompt]);
+  }, [applyPromptOffset, isDraggingPrompt]);
 
   const handleRestart = () => {
-    if (teleprompterRef.current) {
-      teleprompterRef.current.scrollTop = 0;
-    }
+    applyPromptOffset(0);
     setIsPlaying(false);
   };
 
@@ -336,7 +395,7 @@ function ScriptPracticePage() {
 
     promptDragStateRef.current = {
       startY: event.clientY,
-      startScrollTop: teleprompterRef.current.scrollTop,
+      startScrollTop: promptOffsetRef.current,
     };
     setIsPlaying(false);
     setIsDraggingPrompt(true);
@@ -385,6 +444,9 @@ function ScriptPracticePage() {
       : 'pb-12 pt-16 sm:pb-16 sm:pt-20';
   const remoteBaseOffset = isFocusMode ? 0 : isCompactViewport ? 2 : 8;
   const remoteBottomOffset = `calc(env(safe-area-inset-bottom, 0px) + ${remoteBaseOffset + remoteLift}px)`;
+  const promptTextShadow = isCompactViewport
+    ? '0 1px 4px rgba(2, 6, 23, 0.88), 0 0 10px rgba(2, 6, 23, 0.52)'
+    : '0 2px 10px rgba(2, 6, 23, 0.98), 0 0 22px rgba(2, 6, 23, 0.92), 0 0 42px rgba(2, 6, 23, 0.68)';
 
   return (
     <div className={shellClassName}>
@@ -463,11 +525,16 @@ function ScriptPracticePage() {
               >
                 {scriptParagraphs.length > 0 ? (
                   <div
+                    ref={promptContentRef}
                     className="w-full pr-1 text-center font-black tracking-tight text-white sm:pr-2"
                     style={{
+                      backfaceVisibility: 'hidden',
+                      contain: 'layout paint style',
                       color: `rgba(255, 255, 255, ${overlayOpacity / 100})`,
                       fontSize: `${fontSize}px`,
-                      textShadow: '0 2px 10px rgba(2, 6, 23, 0.98), 0 0 22px rgba(2, 6, 23, 0.92), 0 0 42px rgba(2, 6, 23, 0.68)',
+                      textShadow: promptTextShadow,
+                      transform: 'translate3d(0, 0, 0)',
+                      willChange: isPlaying || isDraggingPrompt ? 'transform' : 'auto',
                     }}
                   >
                     <div className={`${isFocusMode ? 'h-[10svh]' : 'h-[10svh] sm:h-[8svh]'}`} />
