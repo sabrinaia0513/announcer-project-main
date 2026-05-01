@@ -91,6 +91,11 @@ function HomePage({ currentUser }) {
     }
   };
 
+  const handleOpenAnnouncementPost = (postId) => {
+    if (!postId) return;
+    navigate(`/post/${postId}`);
+  };
+
   const totalPages = Math.ceil(totalPosts / POSTS_PER_PAGE);
 
   return (
@@ -114,18 +119,26 @@ function HomePage({ currentUser }) {
             announcements.map((announcement) => {
               const dday = calculateDday(announcement.마감일);
               const isUrgent = dday === 'D-Day' || dday === '마감' || (dday.startsWith('D-') && parseInt(dday.replace('D-', ''), 10) <= 3);
-              const AnnouncementCard = announcement.링크 ? 'a' : 'div';
+              const canOpenPost = Boolean(announcement.글번호);
 
               return (
-                <AnnouncementCard
-                  {...(announcement.링크 ? { href: announcement.링크, target: '_blank', rel: 'noopener noreferrer' } : {})}
+                <article
                   key={announcement.글번호}
-                  className={`block min-w-[14.5rem] rounded-[1.25rem] border px-4 py-4 transition-all md:min-w-0 ${announcement.링크 ? 'border-white/10 bg-white text-slate-900 hover:-translate-y-0.5 hover:bg-slate-50' : 'border-white/10 bg-slate-800/80 text-slate-300'}`}
+                  onClick={canOpenPost ? () => handleOpenAnnouncementPost(announcement.글번호) : undefined}
+                  onKeyDown={canOpenPost ? (event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      handleOpenAnnouncementPost(announcement.글번호);
+                    }
+                  } : undefined}
+                  role={canOpenPost ? 'button' : undefined}
+                  tabIndex={canOpenPost ? 0 : undefined}
+                  className={`min-w-[14.5rem] rounded-[1.25rem] border px-4 py-4 transition-all md:min-w-0 ${canOpenPost ? 'cursor-pointer border-white/10 bg-white text-slate-900 hover:-translate-y-0.5 hover:bg-slate-50' : 'border-white/10 bg-slate-800/80 text-slate-300'}`}
                 >
                   <div className={`inline-flex rounded-full px-3 py-1 text-[11px] font-black ${isUrgent ? 'bg-red-500 text-white' : 'bg-blue-600 text-white'}`}>{dday}</div>
                   <h3 className="mt-3 text-sm font-black leading-6 sm:text-base">{announcement.제목}</h3>
-                  <p className={`mt-2 text-xs ${announcement.링크 ? 'text-slate-500' : 'text-slate-400'}`}>마감: {announcement.마감일}</p>
-                </AnnouncementCard>
+                  <p className={`mt-2 text-xs ${canOpenPost ? 'text-slate-500' : 'text-slate-400'}`}>마감: {announcement.마감일}</p>
+                </article>
               );
             })
           )}
