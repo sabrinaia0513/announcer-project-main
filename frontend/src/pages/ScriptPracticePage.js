@@ -464,13 +464,12 @@ function ScriptPracticePage() {
         <div className="relative z-10 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-              <h1 className="text-2xl font-black tracking-tight sm:text-3xl">카메라 리딩 프롬프터</h1>
+              <h1 className="text-2xl font-black tracking-tight sm:text-3xl">연습용 프롬프터</h1>
               <div className="inline-flex self-start rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[11px] font-bold tracking-[0.08em] text-slate-200">
                 {selectedScript ? `대본 #${selectedScript.id}` : '대본 없음'}
               </div>
             </div>
             <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-200 sm:text-base">
-              프롬프트를 화면 거의 전체 높이로 키우고, 하단 리모컨으로 속도와 글자 크기를 즉시 조절할 수 있게 구성했습니다.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -569,7 +568,6 @@ function ScriptPracticePage() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm font-black text-slate-950">프롬프트 원고 편집</p>
-              <p className="mt-1 text-sm text-slate-500">오늘의 원고를 아래 텍스트 칸에 채워 두고, 바로 수정한 내용이 프롬프트에 반영되게 했습니다.</p>
             </div>
             <div className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-600">
               {scriptParagraphs.length > 0 ? `${scriptParagraphs.length}문단` : '원고 없음'}
@@ -661,7 +659,6 @@ function ScriptPracticePage() {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-bold text-slate-900">글자 크기</p>
-                  <p className="mt-1 text-xs text-slate-500">화면을 꽉 채우되 가독성은 유지</p>
                 </div>
                 <div className="rounded-full bg-white px-3 py-1 text-sm font-black text-sky-700 shadow-sm">{fontSize}px</div>
               </div>
@@ -676,8 +673,6 @@ function ScriptPracticePage() {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-bold text-slate-900">글자 선명도</p>
-                  <p className="mt-1 text-xs text-slate-500">배경 위에서 글자가 또렷하게 보이도록 조절</p>
-                </div>
                 <div className="rounded-full bg-white px-3 py-1 text-sm font-black text-sky-700 shadow-sm">{overlayOpacity}%</div>
               </div>
               <div className="mt-3 flex items-center gap-2">

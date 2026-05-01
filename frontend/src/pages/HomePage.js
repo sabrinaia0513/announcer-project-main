@@ -149,7 +149,7 @@ function HomePage({ currentUser }) {
               원고 보관함
             </button>
             <button onClick={handleOpenLatestScriptPractice} className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-slate-700">
-              카메라 리딩 연습
+              연습용 프롬프터
             </button>
           </div>
         </div>
