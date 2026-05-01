@@ -615,13 +615,23 @@ function ScriptPracticePage() {
         )}
       </div>
       ) : (
-        <button
-          type="button"
-          onClick={() => setIsRemoteVisible(true)}
-          className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] left-1/2 z-[80] -translate-x-1/2 rounded-full border border-slate-200 bg-white/92 px-4 py-2 text-xs font-bold text-slate-900 shadow-xl backdrop-blur-xl transition-colors hover:bg-white"
-        >
-          리모컨 열기
-        </button>
+        <div className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] left-1/2 z-[80] flex -translate-x-1/2 items-center gap-2">
+          <button
+            type="button"
+            onClick={handleTogglePlay}
+            disabled={!canAutoScroll}
+            className={`rounded-full px-4 py-2 text-xs font-bold shadow-xl backdrop-blur-xl transition-colors ${canAutoScroll ? 'bg-sky-400 text-slate-950 hover:bg-sky-300' : 'bg-slate-200 text-slate-400'}`}
+          >
+            {isPlaying ? '정지' : '시작'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsRemoteVisible(true)}
+            className="rounded-full border border-slate-200 bg-white/92 px-4 py-2 text-xs font-bold text-slate-900 shadow-xl backdrop-blur-xl transition-colors hover:bg-white"
+          >
+            리모컨 열기
+          </button>
+        </div>
       )}
     </div>
   );
