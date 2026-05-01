@@ -216,7 +216,6 @@ function HomePage({ currentUser }) {
                   {post.file_url && <span className="text-sm text-slate-400">📎 첨부 있음</span>}
                 </div>
                 <h3 className="text-lg font-black tracking-tight text-slate-900 sm:text-xl">{post.제목}</h3>
-                <p className="mt-3 text-sm leading-6 text-slate-600 sm:text-[15px]">{post.내용}</p>
               </div>
 
               <div className="mt-5 flex flex-col gap-3 border-t border-slate-100 pt-4 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
