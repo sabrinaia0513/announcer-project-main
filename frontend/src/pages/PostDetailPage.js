@@ -53,6 +53,7 @@ function PostDetailPage({ currentUser }) {
 
   if (!post) return <PostDetailSpinner />;
   const isPostLiked = currentUser && post.좋아요누른사람들.includes(currentUser.nickname);
+  const canEditPost = currentUser?.username === post.작성자아이디;
   const canDeletePost = currentUser?.username === post.작성자아이디 || currentUser?.is_admin;
   const parentComments = comments.filter(c => c.부모댓글번호 === null);
   const childComments = comments.filter(c => c.부모댓글번호 !== null);
@@ -71,7 +72,10 @@ function PostDetailPage({ currentUser }) {
                 <span className={`mb-4 inline-flex rounded-full px-3 py-1 text-[11px] font-extrabold ${getCategoryBadgeClass(post.카테고리)}`}>{post.카테고리}</span>
                 <h1 className="text-3xl font-black tracking-tight text-gray-900 break-keep sm:text-4xl">{post.제목}</h1>
               </div>
-              {canDeletePost && <button onClick={handleDeletePost} className="rounded-full bg-red-50 px-4 py-2 text-xs font-bold text-red-500 transition-colors hover:bg-red-100">삭제</button>}
+              <div className="flex items-center gap-2">
+                {canEditPost && <button onClick={() => navigate(`/post/${id}/edit`)} className="rounded-full bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-200">수정</button>}
+                {canDeletePost && <button onClick={handleDeletePost} className="rounded-full bg-red-50 px-4 py-2 text-xs font-bold text-red-500 transition-colors hover:bg-red-100">삭제</button>}
+              </div>
             </div>
 
             {post.카테고리 === '공고' && post.deadline && (
