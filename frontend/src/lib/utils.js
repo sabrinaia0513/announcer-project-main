@@ -37,12 +37,71 @@ export const renderMedia = (url) => {
   return <a href={fullUrl} target="_blank" rel="noopener noreferrer" className="mb-8 inline-flex items-center justify-center rounded-2xl bg-slate-100 px-5 py-3 font-bold text-slate-800 transition-colors hover:bg-slate-200">📎 첨부파일 다운로드</a>;
 };
 
+export const parseDeadlineValue = (value) => {
+  if (!value) return null;
+
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value;
+  }
+
+  const normalizedValue = String(value).trim();
+  const localDateMatch = normalizedValue.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::(\d{2}))?)?$/);
+
+  if (localDateMatch) {
+    const [, year, month, day, hours = '00', minutes = '00', seconds = '00'] = localDateMatch;
+    return new Date(
+      Number(year),
+      Number(month) - 1,
+      Number(day),
+      Number(hours),
+      Number(minutes),
+      Number(seconds),
+    );
+  }
+
+  const parsedDate = new Date(normalizedValue);
+  return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
+};
+
+const formatTwoDigits = (value) => String(value).padStart(2, '0');
+
+export const formatDeadlineInputValue = (deadline) => {
+  if (!deadline) return '';
+
+  const normalizedValue = String(deadline).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(normalizedValue)) {
+    return `${normalizedValue}T23:59`;
+  }
+
+  const targetDate = parseDeadlineValue(deadline);
+  if (!targetDate) return '';
+
+  return `${targetDate.getFullYear()}-${formatTwoDigits(targetDate.getMonth() + 1)}-${formatTwoDigits(targetDate.getDate())}T${formatTwoDigits(targetDate.getHours())}:${formatTwoDigits(targetDate.getMinutes())}`;
+};
+
+export const formatDeadlineDisplay = (deadline) => {
+  const targetDate = parseDeadlineValue(deadline);
+  if (!targetDate) return '';
+
+  const formattedDate = `${targetDate.getFullYear()}.${formatTwoDigits(targetDate.getMonth() + 1)}.${formatTwoDigits(targetDate.getDate())}`;
+  const normalizedValue = String(deadline).trim();
+
+  if (!/[T\s]\d{2}:\d{2}/.test(normalizedValue)) {
+    return formattedDate;
+  }
+
+  return `${formattedDate} ${formatTwoDigits(targetDate.getHours())}:${formatTwoDigits(targetDate.getMinutes())}`;
+};
+
 export const calculateDday = (deadline) => {
-  if (!deadline) return "";
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  const dDate = new Date(deadline);
-  const diffTime = dDate - today;
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  const targetDate = parseDeadlineValue(deadline);
+  if (!targetDate) return "";
+
+  const today = new Date();
+  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const deadlineStart = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+  const diffDays = Math.round((deadlineStart - todayStart) / (1000 * 60 * 60 * 24));
+
   if (diffDays < 0) return "마감";
   if (diffDays === 0) return "D-Day";
   return `D-${diffDays}`;

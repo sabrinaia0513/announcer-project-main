@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 import { BACKEND_URL, getAuthHeader } from '../lib/api';
-import { getCategoryBadgeClass, inputStyle, renderMedia } from '../lib/utils';
+import { formatDeadlineDisplay, getCategoryBadgeClass, inputStyle, renderMedia } from '../lib/utils';
 
 function PostDetailSpinner() {
   return (
@@ -80,7 +80,7 @@ function PostDetailPage({ currentUser }) {
 
             {post.카테고리 === '공고' && post.deadline && (
               <div className="mt-6 flex flex-col gap-4 rounded-[1.5rem] border border-red-100 bg-red-50 p-5 sm:flex-row sm:items-center sm:justify-between">
-                <div className="text-center sm:text-left"><p className="text-xs font-bold text-red-500">지원 마감일</p><p className="mt-1 text-2xl font-black text-red-700">{post.deadline}</p></div>
+                <div className="text-center sm:text-left"><p className="text-xs font-bold text-red-500">지원 마감일</p><p className="mt-1 text-2xl font-black text-red-700">{formatDeadlineDisplay(post.deadline)}</p></div>
                 {post.external_link ? (
                   <a href={post.external_link} target="_blank" rel="noopener noreferrer" className="w-full rounded-2xl bg-red-600 px-6 py-3 text-center text-sm font-bold text-white transition-colors hover:bg-red-700 sm:w-auto">공식 사이트 지원하기 →</a>
                 ) : (

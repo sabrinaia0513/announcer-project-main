@@ -1,5 +1,5 @@
 from typing import Optional
-from datetime import date
+from datetime import datetime
 
 from pydantic import BaseModel, validator
 
@@ -22,7 +22,7 @@ class PostCreate(BaseModel):
     content: str
     category: str
     file_url: Optional[str] = None
-    deadline: Optional[date] = None
+    deadline: Optional[datetime] = None
     external_link: Optional[str] = None
 
     @validator("external_link", pre=True, always=True)
@@ -38,7 +38,7 @@ class PostUpdate(BaseModel):
     content: str
     category: str
     file_url: Optional[str] = None
-    deadline: Optional[date] = None
+    deadline: Optional[datetime] = None
     external_link: Optional[str] = None
 
     @validator("external_link", pre=True, always=True)

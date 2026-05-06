@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
 import { BACKEND_URL, getAuthHeader } from '../lib/api';
-import { CATEGORIES, getPostContentPlaceholder, inputStyle } from '../lib/utils';
+import { CATEGORIES, formatDeadlineInputValue, getPostContentPlaceholder, inputStyle } from '../lib/utils';
 
 const isValidExternalLink = (value) => {
   try {
@@ -51,7 +51,7 @@ function WritePostPage({ currentUser }) {
         setCategory(editablePost.카테고리 || '자유');
         setTitle(editablePost.제목 || '');
         setContent(editablePost.내용 || '');
-        setDeadline(editablePost.deadline || '');
+        setDeadline(formatDeadlineInputValue(editablePost.deadline));
         setExternalLink(editablePost.external_link || '');
         setExistingFileUrl(editablePost.file_url || null);
       } catch (error) {
@@ -161,8 +161,8 @@ function WritePostPage({ currentUser }) {
             {category === '공고' && (
               <div className="grid gap-4 rounded-[1.5rem] border border-red-100 bg-red-50 p-5 lg:grid-cols-[220px_minmax(0,1fr)]">
                 <div>
-                  <label className="mb-2 block text-xs font-bold text-red-700">마감일 (D-Day용)</label>
-                  <input type="date" value={deadline} onChange={e => setDeadline(e.target.value)} className={`${inputStyle} py-2`} required />
+                  <label className="mb-2 block text-xs font-bold text-red-700">지원 마감일시</label>
+                  <input type="datetime-local" value={deadline} onChange={e => setDeadline(e.target.value)} className={`${inputStyle} py-2`} required />
                 </div>
                 <div>
                   <label className="mb-2 block text-xs font-bold text-red-700">공식 채용 사이트 링크</label>
@@ -196,7 +196,7 @@ function WritePostPage({ currentUser }) {
             <h2 className="text-2xl font-black tracking-tight text-slate-900">작성 전에 체크할 것</h2>
             <div className="mt-4 space-y-4 text-sm leading-6 text-slate-500">
               <p>카테고리에 맞는 제목을 붙이고, 본문 첫 문장에 핵심 요점을 먼저 쓰는 편이 읽기 좋습니다.</p>
-              <p>공고 게시글은 마감일과 공식 링크를 같이 넣어야 신뢰도가 올라갑니다.</p>
+              <p>공고 게시글은 마감 일시와 공식 링크를 같이 넣어야 신뢰도가 올라갑니다.</p>
               <p>수정 모드에서는 새 파일을 올리지 않으면 기존 첨부 파일이 그대로 유지됩니다.</p>
               <p>중고거래 게시글은 상태, 사용 기간, 희망 가격, 거래 지역을 함께 적으면 확인이 빠릅니다.</p>
               <p>첨부 파일은 이미지, 오디오, 비디오만 업로드할 수 있습니다.</p>
@@ -206,7 +206,7 @@ function WritePostPage({ currentUser }) {
           <div className="rounded-[2rem] border border-slate-200 bg-slate-900 p-5 text-white shadow-sm">
             <p className="text-sm font-semibold text-slate-200">현재 선택한 카테고리</p>
             <p className="mt-1 text-2xl font-black">{category}</p>
-            <p className="mt-4 text-sm leading-6 text-slate-300">{category === '공고' ? '공고 모드에서는 링크와 마감일이 함께 들어갑니다.' : category === '중고거래' ? '중고거래 모드에서는 물품 상태와 거래 조건을 자세히 적는 편이 좋습니다.' : '일반 게시글 모드입니다. 자유롭게 내용을 작성할 수 있습니다.'}</p>
+            <p className="mt-4 text-sm leading-6 text-slate-300">{category === '공고' ? '공고 모드에서는 링크와 마감 일시가 함께 들어갑니다.' : category === '중고거래' ? '중고거래 모드에서는 물품 상태와 거래 조건을 자세히 적는 편이 좋습니다.' : '일반 게시글 모드입니다. 자유롭게 내용을 작성할 수 있습니다.'}</p>
           </div>
         </aside>
       </div>

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { BACKEND_URL, downloadScriptById, getAuthHeader } from '../lib/api';
-import { CATEGORIES, POSTS_PER_PAGE, MAX_PAGE_BUTTONS, inputStyle, calculateDday, getCategoryBadgeClass } from '../lib/utils';
+import { CATEGORIES, POSTS_PER_PAGE, MAX_PAGE_BUTTONS, inputStyle, calculateDday, formatDeadlineDisplay, getCategoryBadgeClass } from '../lib/utils';
 
 function HomePage({ currentUser }) {
   const navigate = useNavigate();
@@ -137,7 +137,7 @@ function HomePage({ currentUser }) {
                 >
                   <div className={`inline-flex rounded-full px-3 py-1 text-[11px] font-black ${isUrgent ? 'bg-red-500 text-white' : 'bg-blue-600 text-white'}`}>{dday}</div>
                   <h3 className="mt-3 text-sm font-black leading-6 sm:text-base">{announcement.제목}</h3>
-                  <p className={`mt-2 text-xs ${canOpenPost ? 'text-slate-500' : 'text-slate-400'}`}>마감: {announcement.마감일}</p>
+                  <p className={`mt-2 text-xs ${canOpenPost ? 'text-slate-500' : 'text-slate-400'}`}>마감: {formatDeadlineDisplay(announcement.마감일)}</p>
                 </article>
               );
             })

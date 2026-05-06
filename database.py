@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Boolean, Date, UniqueConstraint, inspect, text
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Boolean, UniqueConstraint, inspect, text
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime, timezone
@@ -45,7 +45,7 @@ class Post(Base):
     like_count = Column(Integer, default=0)
     view_count = Column(Integer, default=0)
 
-    deadline = Column(Date, nullable=True)  
+    deadline = Column(DateTime, nullable=True)
     external_link = Column(String, nullable=True) 
 
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
@@ -111,7 +111,30 @@ def ensure_script_download_count_column():
     with engine.begin() as connection:
         connection.execute(text("ALTER TABLE scripts ADD COLUMN download_count INTEGER DEFAULT 0"))
 
+
+def ensure_post_deadline_time_values():
+    if not DATABASE_URL.startswith("sqlite"):
+        return
+
+    inspector = inspect(engine)
+    if "posts" not in inspector.get_table_names():
+        return
+
+    post_columns = {column["name"] for column in inspector.get_columns("posts")}
+    if "deadline" not in post_columns:
+        return
+
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                "UPDATE posts "
+                "SET deadline = deadline || ' 23:59:00' "
+                "WHERE deadline IS NOT NULL AND length(trim(deadline)) = 10"
+            )
+        )
+
 def create_tables():
     Base.metadata.create_all(bind=engine)
     ensure_post_view_count_column()
     ensure_script_download_count_column()
+    ensure_post_deadline_time_values()

@@ -1,4 +1,5 @@
 import json
+from datetime import date, datetime
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -11,6 +12,19 @@ from schemas.schemas import PostCreate, PostUpdate
 from services.websocket import notifier
 
 router = APIRouter(tags=["posts"])
+
+
+def serialize_deadline(deadline_value):
+    if deadline_value is None:
+        return None
+
+    if isinstance(deadline_value, datetime):
+        return deadline_value.isoformat(timespec="minutes")
+
+    if isinstance(deadline_value, date):
+        return datetime(deadline_value.year, deadline_value.month, deadline_value.day, 23, 59).isoformat(timespec="minutes")
+
+    return str(deadline_value)
 
 
 @router.post("/posts")
@@ -44,7 +58,7 @@ def get_announcements(db: Session = Depends(get_db)):
         .all()
     )
     return [
-        {"글번호": post.id, "제목": post.title, "마감일": str(post.deadline), "링크": get_safe_external_link(post.external_link)}
+        {"글번호": post.id, "제목": post.title, "마감일": serialize_deadline(post.deadline), "링크": get_safe_external_link(post.external_link)}
         for post in announcements
     ]
 
@@ -98,7 +112,7 @@ def get_posts(
                 "내용": post.content,
                 "카테고리": post.category or "자유",
                 "file_url": post.file_url,
-                "deadline": str(post.deadline) if post.deadline else None,
+                "deadline": serialize_deadline(post.deadline),
                 "external_link": get_safe_external_link(post.external_link),
                 "작성자": post.author.nickname,
                 "작성자아이디": post.author.username,
@@ -132,7 +146,7 @@ def get_post(post_id: int, increment_view: bool = True, db: Session = Depends(ge
         "내용": post.content,
         "카테고리": post.category or "자유",
         "file_url": post.file_url,
-        "deadline": str(post.deadline) if post.deadline else None,
+        "deadline": serialize_deadline(post.deadline),
         "external_link": get_safe_external_link(post.external_link),
         "작성자": post.author.nickname,
         "작성자아이디": post.author.username,
