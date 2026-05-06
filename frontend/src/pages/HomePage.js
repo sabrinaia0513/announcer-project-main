@@ -241,6 +241,7 @@ function HomePage({ currentUser }) {
                   <span>조회 {post.조회수}</span>
                 </div>
                 <div className="flex items-center gap-4 font-bold">
+                  <span className="text-slate-500">💬 {post.댓글수}</span>
                   <span className="text-red-500">❤️ {post.좋아요수}</span>
                 </div>
               </div>

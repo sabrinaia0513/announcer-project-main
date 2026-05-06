@@ -94,7 +94,11 @@ def get_posts(
     if sort_by == "popular":
         paged_posts = (
             query.order_by(database.Post.like_count.desc(), database.Post.id.desc())
-            .options(joinedload(database.Post.author), subqueryload(database.Post.likes).joinedload(database.PostLike.user))
+            .options(
+                joinedload(database.Post.author),
+                subqueryload(database.Post.likes).joinedload(database.PostLike.user),
+                subqueryload(database.Post.comments),
+            )
             .offset(skip)
             .limit(limit)
             .all()
@@ -102,7 +106,11 @@ def get_posts(
     else:
         paged_posts = (
             query.order_by(database.Post.id.desc())
-            .options(joinedload(database.Post.author), subqueryload(database.Post.likes).joinedload(database.PostLike.user))
+            .options(
+                joinedload(database.Post.author),
+                subqueryload(database.Post.likes).joinedload(database.PostLike.user),
+                subqueryload(database.Post.comments),
+            )
             .offset(skip)
             .limit(limit)
             .all()
@@ -124,6 +132,7 @@ def get_posts(
                 "작성자등급": get_user_level(post.author.points, post.author.is_admin),
                 "작성시간": format_datetime_kst(post.created_at),
                 "조회수": post.view_count or 0,
+                "댓글수": len(post.comments),
                 "좋아요수": len(post.likes),
                 "좋아요누른사람들": [like.user.nickname for like in post.likes],
             }
