@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session, joinedload, subqueryload
 
 import database
 from core.deps import get_db, get_current_user
-from core.security import format_datetime_kst, get_safe_external_link, get_user_level
+from core.security import KST, format_datetime_kst, get_safe_external_link, get_user_level
 from schemas.schemas import PostCreate, PostUpdate
 from services.websocket import notifier
 
@@ -50,9 +50,14 @@ def create_post(
 
 @router.get("/announcements")
 def get_announcements(db: Session = Depends(get_db)):
+    current_kst_time = datetime.now(KST).replace(tzinfo=None)
     announcements = (
         db.query(database.Post)
-        .filter(database.Post.category == "공고", database.Post.deadline.isnot(None))
+        .filter(
+            database.Post.category == "공고",
+            database.Post.deadline.isnot(None),
+            database.Post.deadline >= current_kst_time,
+        )
         .options(joinedload(database.Post.author))
         .order_by(database.Post.deadline.asc())
         .all()
