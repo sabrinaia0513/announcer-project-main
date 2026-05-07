@@ -10,7 +10,15 @@ load_dotenv(BASE_DIR / ".env")
 # 허용 파일 확장자 화이트리스트
 # ==========================================
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "gif", "webp", "mp4", "webm", "mov", "mp3", "wav", "ogg"}
-SCRIPT_ALLOWED_EXTENSIONS = ALLOWED_EXTENSIONS | {"txt", "pdf", "doc", "docx", "hwp", "hwpx"}
+DOCUMENT_ALLOWED_EXTENSIONS = {
+	"txt", "md", "rtf", "pdf",
+	"doc", "docx", "odt", "pages",
+	"hwp", "hwpx",
+	"csv", "tsv", "xls", "xlsx", "ods", "numbers",
+	"ppt", "pptx", "odp", "key",
+}
+SCRIPT_ALLOWED_EXTENSIONS = ALLOWED_EXTENSIONS | DOCUMENT_ALLOWED_EXTENSIONS
+POST_ALLOWED_EXTENSIONS = ALLOWED_EXTENSIONS | DOCUMENT_ALLOWED_EXTENSIONS
 MAX_FILE_SIZE = int(os.environ.get("MAX_FILE_SIZE", str(10 * 1024 * 1024)))
 UPLOAD_DIR = os.environ.get("UPLOAD_DIR", str(BASE_DIR / "uploads"))
 

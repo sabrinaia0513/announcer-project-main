@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, UploadFile, File
 import database
 from core.config import (
     MAX_FILE_SIZE,
+    POST_ALLOWED_EXTENSIONS,
     UPLOAD_DIR,
     UPLOAD_RATE_LIMIT_MAX_REQUESTS,
     UPLOAD_RATE_LIMIT_WINDOW_SECONDS,
@@ -39,7 +40,7 @@ def upload_file(
     if file_size > MAX_FILE_SIZE:
         raise HTTPException(status_code=413, detail="첨부파일은 10MB를 초과할 수 없습니다.")
 
-    ext = validate_file_extension(file.filename)
+    ext = validate_file_extension(file.filename, POST_ALLOWED_EXTENSIONS)
     filename = f"{uuid.uuid4()}.{ext}"
     file_path = os.path.join(UPLOAD_DIR, filename)
     with open(file_path, "wb") as buffer:

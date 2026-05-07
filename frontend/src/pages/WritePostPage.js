@@ -4,6 +4,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { BACKEND_URL, getAuthHeader } from '../lib/api';
 import { CATEGORIES, formatDeadlineInputValue, getPostContentPlaceholder, inputStyle } from '../lib/utils';
 
+const POST_FILE_ACCEPT = '.txt,.md,.rtf,.pdf,.doc,.docx,.odt,.pages,.hwp,.hwpx,.csv,.tsv,.xls,.xlsx,.ods,.numbers,.ppt,.pptx,.odp,.key,image/*,audio/*,video/*';
+
 const isValidExternalLink = (value) => {
   try {
     const parsed = new URL(value);
@@ -178,7 +180,8 @@ function WritePostPage({ currentUser }) {
 
             <div className="rounded-[1.5rem] border border-gray-200 bg-gray-50 p-4">
               <label className="mb-2 block text-sm font-bold text-gray-700">📎 첨부 파일 (선택)</label>
-              <input type="file" accept="image/*, audio/*, video/*" onChange={(e) => setFile(e.target.files[0])} className="w-full text-sm text-gray-500 file:mr-4 file:rounded-full file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" />
+              <input type="file" accept={POST_FILE_ACCEPT} onChange={(e) => setFile(e.target.files[0])} className="w-full text-sm text-gray-500 file:mr-4 file:rounded-full file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" />
+              <p className="mt-2 text-xs text-slate-500">이미지, 오디오, 비디오와 함께 PDF, Word, 한글, 엑셀, 파워포인트, Markdown 같은 문서 파일도 첨부할 수 있습니다.</p>
               {existingFileUrl && !file && <p className="mt-2 text-xs font-semibold text-slate-500">현재 첨부 파일이 유지됩니다.</p>}
               {file && <p className="mt-2 text-xs font-semibold text-blue-600">새 파일을 저장하면 기존 첨부를 대체합니다.</p>}
             </div>
@@ -199,7 +202,7 @@ function WritePostPage({ currentUser }) {
               <p>공고 게시글은 마감 일시와 공식 링크를 같이 넣어야 신뢰도가 올라갑니다.</p>
               <p>수정 모드에서는 새 파일을 올리지 않으면 기존 첨부 파일이 그대로 유지됩니다.</p>
               <p>중고거래 게시글은 상태, 사용 기간, 희망 가격, 거래 지역을 함께 적으면 확인이 빠릅니다.</p>
-              <p>첨부 파일은 이미지, 오디오, 비디오만 업로드할 수 있습니다.</p>
+              <p>첨부 파일은 이미지, 오디오, 비디오 외에도 PDF, Word, 한글, 스프레드시트, 프레젠테이션 문서를 업로드할 수 있습니다.</p>
             </div>
           </div>
 
