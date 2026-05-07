@@ -226,7 +226,7 @@ function HomePage({ currentUser }) {
               <div className="min-w-0">
                 <div className="mb-3 flex flex-wrap items-center gap-2">
                   <span className={`rounded-full px-3 py-1 text-[11px] font-extrabold ${getCategoryBadgeClass(post.카테고리)}`}>{post.카테고리}</span>
-                  {post.file_url && <span className="text-sm text-slate-400">📎 첨부 있음</span>}
+                  {(post.file_urls?.length || (post.file_url ? 1 : 0)) > 0 && <span className="text-sm text-slate-400">📎 첨부 {(post.file_urls?.length || 1)}개</span>}
                 </div>
                 <h3 className="text-lg font-black tracking-tight text-slate-900 sm:text-xl">{post.제목}</h3>
               </div>

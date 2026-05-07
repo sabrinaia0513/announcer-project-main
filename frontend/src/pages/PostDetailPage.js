@@ -57,6 +57,7 @@ function PostDetailPage({ currentUser }) {
   const canDeletePost = currentUser?.username === post.작성자아이디 || currentUser?.is_admin;
   const parentComments = comments.filter(c => c.부모댓글번호 === null);
   const childComments = comments.filter(c => c.부모댓글번호 !== null);
+  const attachmentUrls = post.file_urls?.length ? post.file_urls : (post.file_url ? [post.file_url] : []);
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 pb-20 lg:pb-10">
@@ -96,7 +97,11 @@ function PostDetailPage({ currentUser }) {
           </div>
 
           <div className="pt-8">
-            {post.file_url && renderMedia(post.file_url)}
+            {attachmentUrls.map((attachmentUrl, index) => (
+              <div key={`${attachmentUrl}-${index}`}>
+                {renderMedia(attachmentUrl, attachmentUrls.length > 1 ? `첨부파일 ${index + 1} 다운로드` : '첨부파일 다운로드')}
+              </div>
+            ))}
             <div className="min-h-[180px] whitespace-pre-wrap text-base leading-8 text-gray-800 break-keep sm:text-lg">{post.내용}</div>
           </div>
 

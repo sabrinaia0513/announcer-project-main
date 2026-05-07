@@ -14,6 +14,75 @@ from services.websocket import notifier
 router = APIRouter(tags=["posts"])
 
 
+def parse_post_file_urls(file_value: Optional[str]) -> list[str]:
+    if not file_value:
+        return []
+
+    normalized_value = file_value.strip()
+    if not normalized_value:
+        return []
+
+    if normalized_value.startswith("["):
+        try:
+            parsed_value = json.loads(normalized_value)
+        except json.JSONDecodeError:
+            return [normalized_value]
+
+        if isinstance(parsed_value, list):
+            return [item.strip() for item in parsed_value if isinstance(item, str) and item.strip()]
+
+    return [normalized_value]
+
+
+def serialize_post_file_urls(file_urls: Optional[list[str]]) -> Optional[str]:
+    normalized_urls: list[str] = []
+    for file_url in file_urls or []:
+        if not isinstance(file_url, str):
+            continue
+
+        trimmed_url = file_url.strip()
+        if trimmed_url and trimmed_url not in normalized_urls:
+            normalized_urls.append(trimmed_url)
+
+    if not normalized_urls:
+        return None
+    if len(normalized_urls) == 1:
+        return normalized_urls[0]
+
+    return json.dumps(normalized_urls, ensure_ascii=False)
+
+
+def resolve_post_file_urls(file_url: Optional[str], file_urls: Optional[list[str]]) -> list[str]:
+    if file_urls:
+        return [item.strip() for item in file_urls if isinstance(item, str) and item.strip()]
+    if file_url:
+        return [file_url.strip()] if file_url.strip() else []
+    return []
+
+
+def serialize_post(post: database.Post):
+    attachment_urls = parse_post_file_urls(post.file_url)
+    primary_attachment = attachment_urls[0] if attachment_urls else None
+
+    return {
+        "글번호": post.id,
+        "제목": post.title,
+        "내용": post.content,
+        "카테고리": post.category or "자유",
+        "file_url": primary_attachment,
+        "file_urls": attachment_urls,
+        "deadline": serialize_deadline(post.deadline),
+        "external_link": get_safe_external_link(post.external_link),
+        "작성자": post.author.nickname,
+        "작성자아이디": post.author.username,
+        "작성자등급": get_user_level(post.author.points, post.author.is_admin),
+        "작성시간": format_datetime_kst(post.created_at),
+        "조회수": post.view_count or 0,
+        "좋아요수": len(post.likes),
+        "좋아요누른사람들": [like.user.nickname for like in post.likes],
+    }
+
+
 def serialize_deadline(deadline_value):
     if deadline_value is None:
         return None
@@ -33,11 +102,12 @@ def create_post(
     current_user: database.User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    attachment_urls = resolve_post_file_urls(post_data.file_url, post_data.file_urls)
     new_post = database.Post(
         title=post_data.title,
         content=post_data.content,
         category=post_data.category,
-        file_url=post_data.file_url,
+        file_url=serialize_post_file_urls(attachment_urls),
         deadline=post_data.deadline,
         external_link=post_data.external_link,
         user_id=current_user.id,
@@ -118,25 +188,9 @@ def get_posts(
 
     result = []
     for post in paged_posts:
-        result.append(
-            {
-                "글번호": post.id,
-                "제목": post.title,
-                "내용": post.content,
-                "카테고리": post.category or "자유",
-                "file_url": post.file_url,
-                "deadline": serialize_deadline(post.deadline),
-                "external_link": get_safe_external_link(post.external_link),
-                "작성자": post.author.nickname,
-                "작성자아이디": post.author.username,
-                "작성자등급": get_user_level(post.author.points, post.author.is_admin),
-                "작성시간": format_datetime_kst(post.created_at),
-                "조회수": post.view_count or 0,
-                "댓글수": len(post.comments),
-                "좋아요수": len(post.likes),
-                "좋아요누른사람들": [like.user.nickname for like in post.likes],
-            }
-        )
+        serialized_post = serialize_post(post)
+        serialized_post["댓글수"] = len(post.comments)
+        result.append(serialized_post)
     return {"total_count": total_count, "posts": result}
 
 
@@ -154,22 +208,7 @@ def get_post(post_id: int, increment_view: bool = True, db: Session = Depends(ge
         post.view_count = (post.view_count or 0) + 1
         db.commit()
         db.refresh(post)
-    return {
-        "글번호": post.id,
-        "제목": post.title,
-        "내용": post.content,
-        "카테고리": post.category or "자유",
-        "file_url": post.file_url,
-        "deadline": serialize_deadline(post.deadline),
-        "external_link": get_safe_external_link(post.external_link),
-        "작성자": post.author.nickname,
-        "작성자아이디": post.author.username,
-        "작성자등급": get_user_level(post.author.points, post.author.is_admin),
-        "작성시간": format_datetime_kst(post.created_at),
-        "조회수": post.view_count or 0,
-        "좋아요수": len(post.likes),
-        "좋아요누른사람들": [like.user.nickname for like in post.likes],
-    }
+    return serialize_post(post)
 
 
 @router.put("/posts/{post_id}")
@@ -185,10 +224,11 @@ def update_post(
     if post.author.username != current_user.username:
         raise HTTPException(status_code=403, detail="권한이 없습니다.")
 
+    attachment_urls = resolve_post_file_urls(post_data.file_url, post_data.file_urls)
     post.title = post_data.title
     post.content = post_data.content
     post.category = post_data.category
-    post.file_url = post_data.file_url
+    post.file_url = serialize_post_file_urls(attachment_urls)
     post.deadline = post_data.deadline
     post.external_link = post_data.external_link
     db.commit()

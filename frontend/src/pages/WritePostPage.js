@@ -22,8 +22,8 @@ function WritePostPage({ currentUser }) {
   const [category, setCategory] = useState('자유');
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [file, setFile] = useState(null);
-  const [existingFileUrl, setExistingFileUrl] = useState(null);
+  const [files, setFiles] = useState([]);
+  const [existingFileUrls, setExistingFileUrls] = useState([]);
   const [deadline, setDeadline] = useState('');
   const [externalLink, setExternalLink] = useState('');
   const [isUploading, setIsUploading] = useState(false);
@@ -55,7 +55,7 @@ function WritePostPage({ currentUser }) {
         setContent(editablePost.내용 || '');
         setDeadline(formatDeadlineInputValue(editablePost.deadline));
         setExternalLink(editablePost.external_link || '');
-        setExistingFileUrl(editablePost.file_url || null);
+        setExistingFileUrls(editablePost.file_urls?.length ? editablePost.file_urls : (editablePost.file_url ? [editablePost.file_url] : []));
       } catch (error) {
         if (!ignore) {
           alert('수정할 게시글을 불러오지 못했습니다.');
@@ -78,7 +78,7 @@ function WritePostPage({ currentUser }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsUploading(true);
-    if (file && file.size > 10 * 1024 * 1024) {
+    if (files.some((selectedFile) => selectedFile.size > 10 * 1024 * 1024)) {
       alert("🚨 파일 크기가 너무 큽니다! (최대 10MB까지만 업로드 가능)");
       setIsUploading(false);
       return;
@@ -91,21 +91,31 @@ function WritePostPage({ currentUser }) {
     }
 
     try {
-      let uploadedFileUrl = existingFileUrl;
-      if (file) {
-        const formData = new FormData();
-        formData.append("file", file);
-        const uploadRes = await axios.post(`${BACKEND_URL}/upload`, formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-            ...getAuthHeader().headers,
-          },
-        });
-        uploadedFileUrl = uploadRes.data.file_url;
+      let uploadedFileUrls = existingFileUrls;
+      if (files.length > 0) {
+        uploadedFileUrls = await Promise.all(
+          files.map(async (selectedFile) => {
+            const formData = new FormData();
+            formData.append("file", selectedFile);
+
+            const uploadRes = await axios.post(`${BACKEND_URL}/upload`, formData, {
+              headers: {
+                "Content-Type": "multipart/form-data",
+                ...getAuthHeader().headers,
+              },
+            });
+
+            return uploadRes.data.file_url;
+          })
+        );
       }
 
       const payload = {
-        title, content, category, file_url: uploadedFileUrl,
+        title,
+        content,
+        category,
+        file_url: uploadedFileUrls[0] || null,
+        file_urls: uploadedFileUrls,
         deadline: category === '공고' ? deadline : null,
         external_link: category === '공고' ? externalLink : null,
       };
@@ -180,10 +190,17 @@ function WritePostPage({ currentUser }) {
 
             <div className="rounded-[1.5rem] border border-gray-200 bg-gray-50 p-4">
               <label className="mb-2 block text-sm font-bold text-gray-700">📎 첨부 파일 (선택)</label>
-              <input type="file" accept={POST_FILE_ACCEPT} onChange={(e) => setFile(e.target.files[0])} className="w-full text-sm text-gray-500 file:mr-4 file:rounded-full file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" />
-              <p className="mt-2 text-xs text-slate-500">이미지, 오디오, 비디오와 함께 PDF, Word, 한글, 엑셀, 파워포인트, Markdown 같은 문서 파일도 첨부할 수 있습니다.</p>
-              {existingFileUrl && !file && <p className="mt-2 text-xs font-semibold text-slate-500">현재 첨부 파일이 유지됩니다.</p>}
-              {file && <p className="mt-2 text-xs font-semibold text-blue-600">새 파일을 저장하면 기존 첨부를 대체합니다.</p>}
+              <input type="file" multiple accept={POST_FILE_ACCEPT} onChange={(e) => setFiles(Array.from(e.target.files || []))} className="w-full text-sm text-gray-500 file:mr-4 file:rounded-full file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" />
+              <p className="mt-2 text-xs text-slate-500">이미지, 오디오, 비디오와 함께 PDF, Word, 한글, 엑셀, 파워포인트, Markdown 같은 문서 파일을 여러 개 첨부할 수 있습니다.</p>
+              {existingFileUrls.length > 0 && files.length === 0 && <p className="mt-2 text-xs font-semibold text-slate-500">현재 첨부 {existingFileUrls.length}개가 유지됩니다.</p>}
+              {files.length > 0 && <p className="mt-2 text-xs font-semibold text-blue-600">새 파일 {files.length}개를 저장하면 기존 첨부를 모두 대체합니다.</p>}
+              {files.length > 0 && (
+                <ul className="mt-3 space-y-1 text-xs text-slate-600">
+                  {files.map((selectedFile) => (
+                    <li key={`${selectedFile.name}-${selectedFile.size}`}>• {selectedFile.name}</li>
+                  ))}
+                </ul>
+              )}
             </div>
 
             <div className="pt-2">
@@ -200,7 +217,7 @@ function WritePostPage({ currentUser }) {
             <div className="mt-4 space-y-4 text-sm leading-6 text-slate-500">
               <p>카테고리에 맞는 제목을 붙이고, 본문 첫 문장에 핵심 요점을 먼저 쓰는 편이 읽기 좋습니다.</p>
               <p>공고 게시글은 마감 일시와 공식 링크를 같이 넣어야 신뢰도가 올라갑니다.</p>
-              <p>수정 모드에서는 새 파일을 올리지 않으면 기존 첨부 파일이 그대로 유지됩니다.</p>
+              <p>수정 모드에서는 새 파일을 올리지 않으면 기존 첨부 파일이 그대로 유지되고, 새로 올리면 첨부 전체가 교체됩니다.</p>
               <p>중고거래 게시글은 상태, 사용 기간, 희망 가격, 거래 지역을 함께 적으면 확인이 빠릅니다.</p>
               <p>첨부 파일은 이미지, 오디오, 비디오 외에도 PDF, Word, 한글, 스프레드시트, 프레젠테이션 문서를 업로드할 수 있습니다.</p>
             </div>

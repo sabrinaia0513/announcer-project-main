@@ -26,7 +26,7 @@ export const getPostContentPlaceholder = (category) => {
   return '내용을 자유롭게 남겨주세요';
 };
 
-export const renderMedia = (url) => {
+export const renderMedia = (url, linkLabel = '첨부파일 다운로드') => {
   if (!url) return null;
   const fullUrl = url.startsWith('/') ? `${MEDIA_BASE_URL}${url}` : url;
   const lowerUrl = fullUrl.toLowerCase();
@@ -34,7 +34,7 @@ export const renderMedia = (url) => {
   if (lowerUrl.match(/\.(jpeg|jpg|gif|png|webp)$/)) return <img src={fullUrl} alt="첨부 이미지" className="mb-8 max-w-full rounded-[1.75rem] border border-slate-200 shadow-sm" />;
   if (lowerUrl.match(/\.(mp4|webm|mov)$/)) return <video controls src={fullUrl} className="mb-8 max-w-full rounded-[1.75rem] bg-black shadow-sm" />;
   if (lowerUrl.match(/\.(mp3|wav|ogg)$/)) return <audio controls src={fullUrl} className="mb-8 w-full rounded-2xl" />;
-  return <a href={fullUrl} target="_blank" rel="noopener noreferrer" className="mb-8 inline-flex items-center justify-center rounded-2xl bg-slate-100 px-5 py-3 font-bold text-slate-800 transition-colors hover:bg-slate-200">📎 첨부파일 다운로드</a>;
+  return <a href={fullUrl} target="_blank" rel="noopener noreferrer" className="mb-8 inline-flex items-center justify-center rounded-2xl bg-slate-100 px-5 py-3 font-bold text-slate-800 transition-colors hover:bg-slate-200">📎 {linkLabel}</a>;
 };
 
 export const parseDeadlineValue = (value) => {

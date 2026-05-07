@@ -22,6 +22,7 @@ class PostCreate(BaseModel):
     content: str
     category: str
     file_url: Optional[str] = None
+    file_urls: Optional[list[str]] = None
     deadline: Optional[datetime] = None
     external_link: Optional[str] = None
 
@@ -38,6 +39,7 @@ class PostUpdate(BaseModel):
     content: str
     category: str
     file_url: Optional[str] = None
+    file_urls: Optional[list[str]] = None
     deadline: Optional[datetime] = None
     external_link: Optional[str] = None
 
