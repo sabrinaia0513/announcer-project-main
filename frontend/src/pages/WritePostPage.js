@@ -15,6 +15,22 @@ const isValidExternalLink = (value) => {
   }
 };
 
+const getSelectedFileKey = (selectedFile) => `${selectedFile.name}-${selectedFile.size}-${selectedFile.lastModified}`;
+
+const mergeSelectedFiles = (currentFiles, nextFiles) => {
+  const mergedFiles = new Map();
+
+  [...currentFiles, ...nextFiles].forEach((selectedFile) => {
+    if (selectedFile) {
+      mergedFiles.set(getSelectedFileKey(selectedFile), selectedFile);
+    }
+  });
+
+  return Array.from(mergedFiles.values());
+};
+
+const mergeFileUrls = (currentUrls, nextUrls) => Array.from(new Set([...(currentUrls || []), ...(nextUrls || [])].filter(Boolean)));
+
 function WritePostPage({ currentUser }) {
   const navigate = useNavigate();
   const { id: editPostId } = useParams();
@@ -75,6 +91,20 @@ function WritePostPage({ currentUser }) {
     };
   }, [currentUser, editPostId, isEditMode, navigate]);
 
+  const handleFileSelection = (e) => {
+    const nextFiles = Array.from(e.target.files || []);
+    setFiles((currentFiles) => mergeSelectedFiles(currentFiles, nextFiles));
+    e.target.value = '';
+  };
+
+  const handleRemoveSelectedFile = (fileKeyToRemove) => {
+    setFiles((currentFiles) => currentFiles.filter((selectedFile) => getSelectedFileKey(selectedFile) !== fileKeyToRemove));
+  };
+
+  const handleRemoveExistingFile = (fileUrlToRemove) => {
+    setExistingFileUrls((currentUrls) => currentUrls.filter((fileUrl) => fileUrl !== fileUrlToRemove));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsUploading(true);
@@ -93,7 +123,7 @@ function WritePostPage({ currentUser }) {
     try {
       let uploadedFileUrls = existingFileUrls;
       if (files.length > 0) {
-        uploadedFileUrls = await Promise.all(
+        const newUploadedFileUrls = await Promise.all(
           files.map(async (selectedFile) => {
             const formData = new FormData();
             formData.append("file", selectedFile);
@@ -108,6 +138,8 @@ function WritePostPage({ currentUser }) {
             return uploadRes.data.file_url;
           })
         );
+
+        uploadedFileUrls = mergeFileUrls(existingFileUrls, newUploadedFileUrls);
       }
 
       const payload = {
@@ -190,14 +222,35 @@ function WritePostPage({ currentUser }) {
 
             <div className="rounded-[1.5rem] border border-gray-200 bg-gray-50 p-4">
               <label className="mb-2 block text-sm font-bold text-gray-700">📎 첨부 파일 (선택)</label>
-              <input type="file" multiple accept={POST_FILE_ACCEPT} onChange={(e) => setFiles(Array.from(e.target.files || []))} className="w-full text-sm text-gray-500 file:mr-4 file:rounded-full file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" />
-              <p className="mt-2 text-xs text-slate-500">이미지, 오디오, 비디오와 함께 PDF, Word, 한글, 엑셀, 파워포인트, Markdown 같은 문서 파일을 여러 개 첨부할 수 있습니다.</p>
-              {existingFileUrls.length > 0 && files.length === 0 && <p className="mt-2 text-xs font-semibold text-slate-500">현재 첨부 {existingFileUrls.length}개가 유지됩니다.</p>}
-              {files.length > 0 && <p className="mt-2 text-xs font-semibold text-blue-600">새 파일 {files.length}개를 저장하면 기존 첨부를 모두 대체합니다.</p>}
+              <input type="file" multiple accept={POST_FILE_ACCEPT} onChange={handleFileSelection} className="w-full text-sm text-gray-500 file:mr-4 file:rounded-full file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" />
+              <p className="mt-2 text-xs text-slate-500">여러 파일을 한 번에 고르거나, 파일 선택을 여러 번 눌러서 차례대로 추가할 수 있습니다.</p>
+              {existingFileUrls.length > 0 && (
+                <div className="mt-3 rounded-2xl border border-slate-200 bg-white px-3 py-3">
+                  <p className="text-xs font-semibold text-slate-500">현재 첨부 {existingFileUrls.length}개</p>
+                  <ul className="mt-2 space-y-2 text-xs text-slate-600">
+                    {existingFileUrls.map((fileUrl, index) => (
+                      <li key={fileUrl} className="flex items-center justify-between gap-3">
+                        <a href={`${BACKEND_URL}${fileUrl}`} target="_blank" rel="noreferrer" className="truncate font-semibold text-slate-600 hover:text-blue-600 hover:underline">
+                          첨부파일 {index + 1}
+                        </a>
+                        <button type="button" onClick={() => handleRemoveExistingFile(fileUrl)} className="shrink-0 rounded-full bg-slate-100 px-3 py-1 font-semibold text-slate-500 transition-colors hover:bg-red-50 hover:text-red-500">
+                          제거
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {files.length > 0 && <p className="mt-2 text-xs font-semibold text-blue-600">새 파일 {files.length}개가 현재 첨부 뒤에 추가됩니다.</p>}
               {files.length > 0 && (
-                <ul className="mt-3 space-y-1 text-xs text-slate-600">
+                <ul className="mt-3 space-y-2 text-xs text-slate-600">
                   {files.map((selectedFile) => (
-                    <li key={`${selectedFile.name}-${selectedFile.size}`}>• {selectedFile.name}</li>
+                    <li key={getSelectedFileKey(selectedFile)} className="flex items-center justify-between gap-3 rounded-2xl border border-blue-100 bg-blue-50 px-3 py-2">
+                      <span className="truncate font-semibold text-slate-700">{selectedFile.name}</span>
+                      <button type="button" onClick={() => handleRemoveSelectedFile(getSelectedFileKey(selectedFile))} className="shrink-0 rounded-full bg-white px-3 py-1 font-semibold text-slate-500 transition-colors hover:bg-red-50 hover:text-red-500">
+                        제외
+                      </button>
+                    </li>
                   ))}
                 </ul>
               )}
@@ -217,7 +270,7 @@ function WritePostPage({ currentUser }) {
             <div className="mt-4 space-y-4 text-sm leading-6 text-slate-500">
               <p>카테고리에 맞는 제목을 붙이고, 본문 첫 문장에 핵심 요점을 먼저 쓰는 편이 읽기 좋습니다.</p>
               <p>공고 게시글은 마감 일시와 공식 링크를 같이 넣어야 신뢰도가 올라갑니다.</p>
-              <p>수정 모드에서는 새 파일을 올리지 않으면 기존 첨부 파일이 그대로 유지되고, 새로 올리면 첨부 전체가 교체됩니다.</p>
+              <p>수정 모드에서는 기존 첨부를 유지한 채 새 파일을 추가할 수 있고, 필요 없는 첨부는 목록에서 바로 제거할 수 있습니다.</p>
               <p>중고거래 게시글은 상태, 사용 기간, 희망 가격, 거래 지역을 함께 적으면 확인이 빠릅니다.</p>
               <p>첨부 파일은 이미지, 오디오, 비디오 외에도 PDF, Word, 한글, 스프레드시트, 프레젠테이션 문서를 업로드할 수 있습니다.</p>
             </div>
