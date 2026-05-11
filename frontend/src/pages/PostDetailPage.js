@@ -91,6 +91,10 @@ function PostDetailPage({ currentUser }) {
             )}
 
             <div className="mt-6 flex flex-wrap items-center gap-3 text-sm text-gray-500">
+              <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 font-semibold text-slate-700">
+                <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-slate-500">{post.작성자등급}</span>
+                {post.작성자}
+              </span>
               <span>{post.작성시간}</span>
               <span>조회 {post.조회수}</span>
             </div>
