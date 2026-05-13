@@ -1,5 +1,5 @@
 import React from 'react';
-import { MEDIA_BASE_URL } from './api';
+import { BACKEND_URL, MEDIA_BASE_URL } from './api';
 
 export const CATEGORIES = ['자유', '스터디', '질문', '정보', '공고', '장터'];
 export const POSTS_PER_PAGE = 5;
@@ -29,7 +29,7 @@ export const getPostContentPlaceholder = (category) => {
 export const renderMedia = (url, linkLabel = '첨부파일 다운로드', downloadUrl = url) => {
   if (!url) return null;
   const fullUrl = url.startsWith('/') ? `${MEDIA_BASE_URL}${url}` : url;
-  const fullDownloadUrl = downloadUrl && downloadUrl.startsWith('/') ? `${MEDIA_BASE_URL}${downloadUrl}` : (downloadUrl || fullUrl);
+  const fullDownloadUrl = downloadUrl && downloadUrl.startsWith('/') ? `${BACKEND_URL}${downloadUrl}` : (downloadUrl || fullUrl);
   const lowerUrl = fullUrl.toLowerCase();
   const downloadButton = (
     <a href={fullDownloadUrl} className="inline-flex items-center justify-center rounded-2xl bg-slate-100 px-5 py-3 font-bold text-slate-800 transition-colors hover:bg-slate-200">
