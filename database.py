@@ -42,6 +42,7 @@ class Post(Base):
     content = Column(String)
     category = Column(String, default="자유", index=True)
     file_url = Column(String, nullable=True)
+    file_names = Column(String, nullable=True)
     like_count = Column(Integer, default=0)
     view_count = Column(Integer, default=0)
 
@@ -99,6 +100,19 @@ def ensure_post_view_count_column():
         connection.execute(text("ALTER TABLE posts ADD COLUMN view_count INTEGER DEFAULT 0"))
 
 
+def ensure_post_file_names_column():
+    inspector = inspect(engine)
+    if "posts" not in inspector.get_table_names():
+        return
+
+    post_columns = {column["name"] for column in inspector.get_columns("posts")}
+    if "file_names" in post_columns:
+        return
+
+    with engine.begin() as connection:
+        connection.execute(text("ALTER TABLE posts ADD COLUMN file_names VARCHAR"))
+
+
 def ensure_script_download_count_column():
     inspector = inspect(engine)
     if "scripts" not in inspector.get_table_names():
@@ -136,5 +150,6 @@ def ensure_post_deadline_time_values():
 def create_tables():
     Base.metadata.create_all(bind=engine)
     ensure_post_view_count_column()
+    ensure_post_file_names_column()
     ensure_script_download_count_column()
     ensure_post_deadline_time_values()

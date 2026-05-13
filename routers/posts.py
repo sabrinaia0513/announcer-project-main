@@ -1,11 +1,15 @@
 import json
+import os
 from datetime import date, datetime
 from typing import Optional
+from urllib.parse import quote, unquote
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session, joinedload, subqueryload
 
 import database
+from core.config import UPLOAD_DIR
 from core.deps import get_db, get_current_user
 from core.security import KST, format_datetime_kst, get_safe_external_link, get_user_level
 from schemas.schemas import PostCreate, PostUpdate
@@ -34,6 +38,10 @@ def parse_post_file_urls(file_value: Optional[str]) -> list[str]:
     return [normalized_value]
 
 
+def parse_post_file_names(file_value: Optional[str]) -> list[str]:
+    return parse_post_file_urls(file_value)
+
+
 def serialize_post_file_urls(file_urls: Optional[list[str]]) -> Optional[str]:
     normalized_urls: list[str] = []
     for file_url in file_urls or []:
@@ -52,6 +60,21 @@ def serialize_post_file_urls(file_urls: Optional[list[str]]) -> Optional[str]:
     return json.dumps(normalized_urls, ensure_ascii=False)
 
 
+def serialize_post_file_names(file_names: Optional[list[str]]) -> Optional[str]:
+    normalized_names: list[str] = []
+    for file_name in file_names or []:
+        normalized_name = normalize_attachment_name(file_name)
+        if normalized_name:
+            normalized_names.append(normalized_name)
+
+    if not normalized_names:
+        return None
+    if len(normalized_names) == 1:
+        return normalized_names[0]
+
+    return json.dumps(normalized_names, ensure_ascii=False)
+
+
 def resolve_post_file_urls(file_url: Optional[str], file_urls: Optional[list[str]]) -> list[str]:
     if file_urls:
         return [item.strip() for item in file_urls if isinstance(item, str) and item.strip()]
@@ -60,9 +83,64 @@ def resolve_post_file_urls(file_url: Optional[str], file_urls: Optional[list[str
     return []
 
 
-def serialize_post(post: database.Post):
+def normalize_attachment_name(file_name: Optional[str]) -> Optional[str]:
+    if not isinstance(file_name, str):
+        return None
+
+    normalized_name = os.path.basename(file_name.replace("\\", "/").strip())
+    return normalized_name or None
+
+
+def derive_attachment_name(file_url: Optional[str]) -> str:
+    if not isinstance(file_url, str) or not file_url.strip():
+        return "attachment"
+
+    normalized_url = file_url.strip().split("?", 1)[0].rstrip("/")
+    filename = unquote(normalized_url.rsplit("/", 1)[-1]) if "/" in normalized_url else unquote(normalized_url)
+    return filename or "attachment"
+
+
+def resolve_post_file_names(file_names: Optional[list[str]], attachment_urls: list[str]) -> list[str]:
+    resolved_names: list[str] = []
+    raw_names = file_names or []
+
+    for index, attachment_url in enumerate(attachment_urls):
+        raw_name = raw_names[index] if index < len(raw_names) else None
+        resolved_names.append(normalize_attachment_name(raw_name) or derive_attachment_name(attachment_url))
+
+    return resolved_names
+
+
+def build_post_attachments(post: database.Post):
     attachment_urls = parse_post_file_urls(post.file_url)
+    attachment_names = resolve_post_file_names(parse_post_file_names(post.file_names), attachment_urls)
+    attachments = [
+        {
+            "url": attachment_url,
+            "name": attachment_names[index],
+            "download_url": f"/posts/{post.id}/attachments/{index}/download",
+        }
+        for index, attachment_url in enumerate(attachment_urls)
+    ]
+    return attachment_urls, attachment_names, attachments
+
+
+def build_download_headers(filename: str):
+    return {"Content-Disposition": f"attachment; filename*=UTF-8''{quote(filename)}"}
+
+
+def get_post_attachment_file_path(file_url: Optional[str]) -> Optional[str]:
+    if not file_url:
+        return None
+
+    filename = file_url.replace("/uploads/", "", 1)
+    return os.path.join(UPLOAD_DIR, filename)
+
+
+def serialize_post(post: database.Post):
+    attachment_urls, attachment_names, attachments = build_post_attachments(post)
     primary_attachment = attachment_urls[0] if attachment_urls else None
+    primary_attachment_name = attachment_names[0] if attachment_names else None
 
     return {
         "글번호": post.id,
@@ -71,6 +149,9 @@ def serialize_post(post: database.Post):
         "카테고리": post.category or "자유",
         "file_url": primary_attachment,
         "file_urls": attachment_urls,
+        "file_name": primary_attachment_name,
+        "file_names": attachment_names,
+        "attachments": attachments,
         "deadline": serialize_deadline(post.deadline),
         "external_link": get_safe_external_link(post.external_link),
         "작성자": post.author.nickname,
@@ -103,11 +184,13 @@ def create_post(
     db: Session = Depends(get_db),
 ):
     attachment_urls = resolve_post_file_urls(post_data.file_url, post_data.file_urls)
+    attachment_names = resolve_post_file_names(post_data.file_names, attachment_urls)
     new_post = database.Post(
         title=post_data.title,
         content=post_data.content,
         category=post_data.category,
         file_url=serialize_post_file_urls(attachment_urls),
+        file_names=serialize_post_file_names(attachment_names),
         deadline=post_data.deadline,
         external_link=post_data.external_link,
         user_id=current_user.id,
@@ -225,14 +308,40 @@ def update_post(
         raise HTTPException(status_code=403, detail="권한이 없습니다.")
 
     attachment_urls = resolve_post_file_urls(post_data.file_url, post_data.file_urls)
+    attachment_names = resolve_post_file_names(post_data.file_names, attachment_urls)
     post.title = post_data.title
     post.content = post_data.content
     post.category = post_data.category
     post.file_url = serialize_post_file_urls(attachment_urls)
+    post.file_names = serialize_post_file_names(attachment_names)
     post.deadline = post_data.deadline
     post.external_link = post_data.external_link
     db.commit()
     return {"message": "수정 완료"}
+
+
+@router.get("/posts/{post_id}/attachments/{attachment_index}/download")
+def download_post_attachment(post_id: int, attachment_index: int, db: Session = Depends(get_db)):
+    post = db.query(database.Post).filter(database.Post.id == post_id).first()
+    if not post:
+        raise HTTPException(status_code=404, detail="게시글을 찾을 수 없습니다.")
+
+    attachment_urls, attachment_names, _ = build_post_attachments(post)
+    if attachment_index < 0 or attachment_index >= len(attachment_urls):
+        raise HTTPException(status_code=404, detail="첨부파일을 찾을 수 없습니다.")
+
+    file_url = attachment_urls[attachment_index]
+    file_name = attachment_names[attachment_index]
+    file_path = get_post_attachment_file_path(file_url)
+
+    if not file_path or not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="첨부파일을 찾을 수 없습니다.")
+
+    return FileResponse(
+        file_path,
+        media_type="application/octet-stream",
+        headers=build_download_headers(file_name),
+    )
 
 
 @router.delete("/posts/{post_id}")

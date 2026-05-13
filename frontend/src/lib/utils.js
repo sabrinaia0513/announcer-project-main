@@ -26,15 +26,27 @@ export const getPostContentPlaceholder = (category) => {
   return '내용을 자유롭게 남겨주세요';
 };
 
-export const renderMedia = (url, linkLabel = '첨부파일 다운로드') => {
+export const renderMedia = (url, linkLabel = '첨부파일 다운로드', downloadUrl = url) => {
   if (!url) return null;
   const fullUrl = url.startsWith('/') ? `${MEDIA_BASE_URL}${url}` : url;
+  const fullDownloadUrl = downloadUrl && downloadUrl.startsWith('/') ? `${MEDIA_BASE_URL}${downloadUrl}` : (downloadUrl || fullUrl);
   const lowerUrl = fullUrl.toLowerCase();
+  const downloadButton = (
+    <a href={fullDownloadUrl} className="inline-flex items-center justify-center rounded-2xl bg-slate-100 px-5 py-3 font-bold text-slate-800 transition-colors hover:bg-slate-200">
+      📎 {linkLabel}
+    </a>
+  );
 
-  if (lowerUrl.match(/\.(jpeg|jpg|gif|png|webp)$/)) return <img src={fullUrl} alt="첨부 이미지" className="mb-8 max-w-full rounded-[1.75rem] border border-slate-200 shadow-sm" />;
-  if (lowerUrl.match(/\.(mp4|webm|mov)$/)) return <video controls src={fullUrl} className="mb-8 max-w-full rounded-[1.75rem] bg-black shadow-sm" />;
-  if (lowerUrl.match(/\.(mp3|wav|ogg)$/)) return <audio controls src={fullUrl} className="mb-8 w-full rounded-2xl" />;
-  return <a href={fullUrl} target="_blank" rel="noopener noreferrer" className="mb-8 inline-flex items-center justify-center rounded-2xl bg-slate-100 px-5 py-3 font-bold text-slate-800 transition-colors hover:bg-slate-200">📎 {linkLabel}</a>;
+  if (lowerUrl.match(/\.(jpeg|jpg|gif|png|webp)$/)) {
+    return <div className="mb-8 space-y-3"><img src={fullUrl} alt="첨부 이미지" className="max-w-full rounded-[1.75rem] border border-slate-200 shadow-sm" />{downloadButton}</div>;
+  }
+  if (lowerUrl.match(/\.(mp4|webm|mov)$/)) {
+    return <div className="mb-8 space-y-3"><video controls src={fullUrl} className="max-w-full rounded-[1.75rem] bg-black shadow-sm" />{downloadButton}</div>;
+  }
+  if (lowerUrl.match(/\.(mp3|wav|ogg)$/)) {
+    return <div className="mb-8 space-y-3"><audio controls src={fullUrl} className="w-full rounded-2xl" />{downloadButton}</div>;
+  }
+  return <div className="mb-8">{downloadButton}</div>;
 };
 
 export const parseDeadlineValue = (value) => {

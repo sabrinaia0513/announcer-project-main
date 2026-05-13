@@ -29,7 +29,36 @@ const mergeSelectedFiles = (currentFiles, nextFiles) => {
   return Array.from(mergedFiles.values());
 };
 
-const mergeFileUrls = (currentUrls, nextUrls) => Array.from(new Set([...(currentUrls || []), ...(nextUrls || [])].filter(Boolean)));
+const mergeAttachments = (currentAttachments, nextAttachments) => {
+  const mergedAttachments = new Map();
+
+  [...(currentAttachments || []), ...(nextAttachments || [])].forEach((attachment) => {
+    if (attachment?.url) {
+      mergedAttachments.set(attachment.url, attachment);
+    }
+  });
+
+  return Array.from(mergedAttachments.values());
+};
+
+const buildPostAttachments = (post) => {
+  if (post.attachments?.length) {
+    return post.attachments.map((attachment) => ({
+      url: attachment.url,
+      name: attachment.name,
+      downloadUrl: attachment.download_url,
+    }));
+  }
+
+  const fileUrls = post.file_urls?.length ? post.file_urls : (post.file_url ? [post.file_url] : []);
+  const fileNames = post.file_names?.length ? post.file_names : (post.file_name ? [post.file_name] : []);
+
+  return fileUrls.map((url, index) => ({
+    url,
+    name: fileNames[index] || `첨부파일 ${index + 1}`,
+    downloadUrl: null,
+  }));
+};
 
 function WritePostPage({ currentUser }) {
   const navigate = useNavigate();
@@ -39,7 +68,7 @@ function WritePostPage({ currentUser }) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [files, setFiles] = useState([]);
-  const [existingFileUrls, setExistingFileUrls] = useState([]);
+  const [existingAttachments, setExistingAttachments] = useState([]);
   const [deadline, setDeadline] = useState('');
   const [externalLink, setExternalLink] = useState('');
   const [isUploading, setIsUploading] = useState(false);
@@ -71,7 +100,7 @@ function WritePostPage({ currentUser }) {
         setContent(editablePost.내용 || '');
         setDeadline(formatDeadlineInputValue(editablePost.deadline));
         setExternalLink(editablePost.external_link || '');
-        setExistingFileUrls(editablePost.file_urls?.length ? editablePost.file_urls : (editablePost.file_url ? [editablePost.file_url] : []));
+        setExistingAttachments(buildPostAttachments(editablePost));
       } catch (error) {
         if (!ignore) {
           alert('수정할 게시글을 불러오지 못했습니다.');
@@ -102,7 +131,7 @@ function WritePostPage({ currentUser }) {
   };
 
   const handleRemoveExistingFile = (fileUrlToRemove) => {
-    setExistingFileUrls((currentUrls) => currentUrls.filter((fileUrl) => fileUrl !== fileUrlToRemove));
+    setExistingAttachments((currentAttachments) => currentAttachments.filter((attachment) => attachment.url !== fileUrlToRemove));
   };
 
   const handleSubmit = async (e) => {
@@ -121,9 +150,9 @@ function WritePostPage({ currentUser }) {
     }
 
     try {
-      let uploadedFileUrls = existingFileUrls;
+      let uploadedAttachments = existingAttachments;
       if (files.length > 0) {
-        const newUploadedFileUrls = await Promise.all(
+        const newUploadedAttachments = await Promise.all(
           files.map(async (selectedFile) => {
             const formData = new FormData();
             formData.append("file", selectedFile);
@@ -135,12 +164,19 @@ function WritePostPage({ currentUser }) {
               },
             });
 
-            return uploadRes.data.file_url;
+            return {
+              url: uploadRes.data.file_url,
+              name: uploadRes.data.file_name || selectedFile.name,
+              downloadUrl: null,
+            };
           })
         );
 
-        uploadedFileUrls = mergeFileUrls(existingFileUrls, newUploadedFileUrls);
+        uploadedAttachments = mergeAttachments(existingAttachments, newUploadedAttachments);
       }
+
+      const uploadedFileUrls = uploadedAttachments.map((attachment) => attachment.url);
+      const uploadedFileNames = uploadedAttachments.map((attachment) => attachment.name);
 
       const payload = {
         title,
@@ -148,6 +184,7 @@ function WritePostPage({ currentUser }) {
         category,
         file_url: uploadedFileUrls[0] || null,
         file_urls: uploadedFileUrls,
+        file_names: uploadedFileNames,
         deadline: category === '공고' ? deadline : null,
         external_link: category === '공고' ? externalLink : null,
       };
@@ -224,16 +261,16 @@ function WritePostPage({ currentUser }) {
               <label className="mb-2 block text-sm font-bold text-gray-700">📎 첨부 파일 (선택)</label>
               <input type="file" multiple accept={POST_FILE_ACCEPT} onChange={handleFileSelection} className="w-full text-sm text-gray-500 file:mr-4 file:rounded-full file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" />
               <p className="mt-2 text-xs text-slate-500">여러 파일을 한 번에 고르거나, 파일 선택을 여러 번 눌러서 차례대로 추가할 수 있습니다.</p>
-              {existingFileUrls.length > 0 && (
+              {existingAttachments.length > 0 && (
                 <div className="mt-3 rounded-2xl border border-slate-200 bg-white px-3 py-3">
-                  <p className="text-xs font-semibold text-slate-500">현재 첨부 {existingFileUrls.length}개</p>
+                  <p className="text-xs font-semibold text-slate-500">현재 첨부 {existingAttachments.length}개</p>
                   <ul className="mt-2 space-y-2 text-xs text-slate-600">
-                    {existingFileUrls.map((fileUrl, index) => (
-                      <li key={fileUrl} className="flex items-center justify-between gap-3">
-                        <a href={`${BACKEND_URL}${fileUrl}`} target="_blank" rel="noreferrer" className="truncate font-semibold text-slate-600 hover:text-blue-600 hover:underline">
-                          첨부파일 {index + 1}
+                    {existingAttachments.map((attachment, index) => (
+                      <li key={attachment.url} className="flex items-center justify-between gap-3">
+                        <a href={`${BACKEND_URL}${attachment.downloadUrl || attachment.url}`} className="truncate font-semibold text-slate-600 hover:text-blue-600 hover:underline">
+                          {attachment.name || `첨부파일 ${index + 1}`}
                         </a>
-                        <button type="button" onClick={() => handleRemoveExistingFile(fileUrl)} className="shrink-0 rounded-full bg-slate-100 px-3 py-1 font-semibold text-slate-500 transition-colors hover:bg-red-50 hover:text-red-500">
+                        <button type="button" onClick={() => handleRemoveExistingFile(attachment.url)} className="shrink-0 rounded-full bg-slate-100 px-3 py-1 font-semibold text-slate-500 transition-colors hover:bg-red-50 hover:text-red-500">
                           제거
                         </button>
                       </li>

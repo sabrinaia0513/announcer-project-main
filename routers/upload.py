@@ -33,6 +33,8 @@ def upload_file(
     file: UploadFile = File(...),
     current_user: database.User = Depends(get_current_user),
 ):
+    original_filename = os.path.basename((file.filename or "").replace("\\", "/")) or "attachment"
+
     file.file.seek(0, 2)
     file_size = file.file.tell()
     file.file.seek(0)
@@ -46,4 +48,4 @@ def upload_file(
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    return {"file_url": f"/uploads/{filename}"}
+    return {"file_url": f"/uploads/{filename}", "file_name": original_filename}

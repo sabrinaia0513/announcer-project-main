@@ -4,6 +4,27 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { BACKEND_URL, getAuthHeader } from '../lib/api';
 import { formatDeadlineDisplay, getCategoryBadgeClass, inputStyle, renderMedia } from '../lib/utils';
 
+const buildPostAttachments = (post) => {
+  if (post.attachments?.length) {
+    return post.attachments.map((attachment, index) => ({
+      id: `${attachment.url}-${index}`,
+      url: attachment.url,
+      name: attachment.name || `첨부파일 ${index + 1}`,
+      downloadUrl: attachment.download_url || attachment.url,
+    }));
+  }
+
+  const fileUrls = post.file_urls?.length ? post.file_urls : (post.file_url ? [post.file_url] : []);
+  const fileNames = post.file_names?.length ? post.file_names : (post.file_name ? [post.file_name] : []);
+
+  return fileUrls.map((url, index) => ({
+    id: `${url}-${index}`,
+    url,
+    name: fileNames[index] || `첨부파일 ${index + 1}`,
+    downloadUrl: url,
+  }));
+};
+
 function PostDetailSpinner() {
   return (
     <div className="flex min-h-[55vh] items-center justify-center px-6">
@@ -57,7 +78,7 @@ function PostDetailPage({ currentUser }) {
   const canDeletePost = currentUser?.username === post.작성자아이디 || currentUser?.is_admin;
   const parentComments = comments.filter(c => c.부모댓글번호 === null);
   const childComments = comments.filter(c => c.부모댓글번호 !== null);
-  const attachmentUrls = post.file_urls?.length ? post.file_urls : (post.file_url ? [post.file_url] : []);
+  const attachments = buildPostAttachments(post);
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 pb-20 lg:pb-10">
@@ -101,12 +122,20 @@ function PostDetailPage({ currentUser }) {
           </div>
 
           <div className="pt-8">
-            {attachmentUrls.map((attachmentUrl, index) => (
-              <div key={`${attachmentUrl}-${index}`}>
-                {renderMedia(attachmentUrl, attachmentUrls.length > 1 ? `첨부파일 ${index + 1} 다운로드` : '첨부파일 다운로드')}
-              </div>
-            ))}
             <div className="min-h-[180px] whitespace-pre-wrap text-base leading-8 text-gray-800 break-keep sm:text-lg">{post.내용}</div>
+            {attachments.length > 0 && (
+              <section className="mt-10 border-t border-slate-100 pt-8">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <h2 className="text-lg font-black text-slate-900">첨부파일</h2>
+                  <span className="text-sm font-semibold text-slate-400">총 {attachments.length}개</span>
+                </div>
+                {attachments.map((attachment) => (
+                  <div key={attachment.id}>
+                    {renderMedia(attachment.url, attachment.name, attachment.downloadUrl)}
+                  </div>
+                ))}
+              </section>
+            )}
           </div>
 
           <div className="mt-8 flex items-center justify-between gap-3 border-t border-slate-100 pt-5">
