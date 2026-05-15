@@ -8,8 +8,33 @@ const MAX_SCROLL_LEVEL = 100;
 const MIN_FONT_SIZE = 22;
 const MAX_FONT_SIZE = 72;
 const MAX_REMOTE_LIFT = 260;
+const RECORDING_MIME_CANDIDATES = [
+  { mimeType: 'video/mp4;codecs=h264,aac', extension: 'mp4' },
+  { mimeType: 'video/mp4', extension: 'mp4' },
+  { mimeType: 'video/webm;codecs=vp9,opus', extension: 'webm' },
+  { mimeType: 'video/webm;codecs=vp8,opus', extension: 'webm' },
+  { mimeType: 'video/webm', extension: 'webm' },
+];
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+
+const resolveRecordingConfig = () => {
+  if (typeof window === 'undefined' || typeof window.MediaRecorder === 'undefined') {
+    return null;
+  }
+
+  if (typeof window.MediaRecorder.isTypeSupported !== 'function') {
+    return { mimeType: '', extension: 'webm' };
+  }
+
+  return RECORDING_MIME_CANDIDATES.find((candidate) => window.MediaRecorder.isTypeSupported(candidate.mimeType)) || { mimeType: '', extension: 'webm' };
+};
+
+const buildRecordingFilename = (title, extension) => {
+  const baseTitle = (title || 'teleprompter-practice').replace(/[\\/:*?"<>|]/g, '_').trim() || 'teleprompter-practice';
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  return `${baseTitle}_${timestamp}.${extension}`;
+};
 
 function ScriptPracticePage() {
   const navigate = useNavigate();
@@ -19,6 +44,10 @@ function ScriptPracticePage() {
   const teleprompterRef = useRef(null);
   const promptContentRef = useRef(null);
   const streamRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const recordingChunksRef = useRef([]);
+  const recordingAudioStreamRef = useRef(null);
+  const recordingExtensionRef = useRef('webm');
   const promptAnimationFrameRef = useRef(0);
   const promptOffsetRef = useRef(0);
   const promptMaxOffsetRef = useRef(0);
@@ -37,6 +66,8 @@ function ScriptPracticePage() {
   const [cameraEnabled, setCameraEnabled] = useState(false);
   const [cameraError, setCameraError] = useState('');
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingStatus, setRecordingStatus] = useState('');
   const [scrollLevel, setScrollLevel] = useState(0);
   const [fontSize, setFontSize] = useState(36);
   const [overlayOpacity, setOverlayOpacity] = useState(96);
@@ -68,6 +99,124 @@ function ScriptPracticePage() {
       videoRef.current.srcObject = null;
     }
   };
+
+  const cleanupRecordingAudioStream = useCallback(() => {
+    if (recordingAudioStreamRef.current) {
+      recordingAudioStreamRef.current.getTracks().forEach((track) => track.stop());
+      recordingAudioStreamRef.current = null;
+    }
+  }, []);
+
+  const finalizeRecordingDownload = useCallback((blob, extension) => {
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    link.href = downloadUrl;
+    link.download = buildRecordingFilename(selectedScript?.title, extension);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => {
+      window.URL.revokeObjectURL(downloadUrl);
+    }, 1000);
+  }, [selectedScript?.title]);
+
+  const stopRecording = useCallback(() => {
+    const recorder = mediaRecorderRef.current;
+    if (!recorder || recorder.state === 'inactive') return;
+
+    recorder.stop();
+  }, []);
+
+  const startRecording = useCallback(async () => {
+    if (typeof window === 'undefined' || typeof window.MediaRecorder === 'undefined') {
+      alert('이 브라우저는 영상 녹화를 지원하지 않습니다. 최신 Safari 또는 Chrome에서 다시 시도해 주세요.');
+      return;
+    }
+
+    if (!streamRef.current || streamRef.current.getVideoTracks().length === 0) {
+      alert('먼저 카메라를 켜야 녹화를 시작할 수 있습니다.');
+      return;
+    }
+
+    const recordingConfig = resolveRecordingConfig();
+    if (!recordingConfig) {
+      alert('이 브라우저는 영상 녹화를 지원하지 않습니다. 최신 Safari 또는 Chrome에서 다시 시도해 주세요.');
+      return;
+    }
+
+    const recordingStream = new MediaStream(streamRef.current.getVideoTracks());
+    let microphoneEnabled = false;
+
+    if (navigator.mediaDevices?.getUserMedia) {
+      try {
+        const audioStream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          },
+        });
+
+        recordingAudioStreamRef.current = audioStream;
+        audioStream.getAudioTracks().forEach((track) => recordingStream.addTrack(track));
+        microphoneEnabled = true;
+      } catch (error) {
+        console.warn('마이크 권한 없이 영상만 녹화합니다.', error);
+      }
+    }
+
+    try {
+      const recorderOptions = recordingConfig.mimeType ? { mimeType: recordingConfig.mimeType } : undefined;
+      const recorder = new window.MediaRecorder(recordingStream, recorderOptions);
+
+      mediaRecorderRef.current = recorder;
+      recordingChunksRef.current = [];
+      recordingExtensionRef.current = recordingConfig.extension;
+
+      recorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) {
+          recordingChunksRef.current.push(event.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        const chunks = recordingChunksRef.current;
+        const blobType = chunks[0]?.type || recordingConfig.mimeType || 'video/webm';
+
+        if (chunks.length > 0) {
+          finalizeRecordingDownload(new Blob(chunks, { type: blobType }), recordingExtensionRef.current);
+          setRecordingStatus('녹화 파일이 기기에 저장되었습니다.');
+        } else {
+          setRecordingStatus('저장할 녹화 데이터가 없습니다. 다시 시도해 주세요.');
+        }
+
+        mediaRecorderRef.current = null;
+        recordingChunksRef.current = [];
+        cleanupRecordingAudioStream();
+        setIsRecording(false);
+      };
+
+      recorder.onerror = (event) => {
+        console.error('녹화 실패:', event.error);
+        setRecordingStatus('녹화 중 오류가 발생했습니다. 다시 시도해 주세요.');
+        mediaRecorderRef.current = null;
+        recordingChunksRef.current = [];
+        cleanupRecordingAudioStream();
+        setIsRecording(false);
+      };
+
+      recorder.start(250);
+      setIsRecording(true);
+      setRecordingStatus(microphoneEnabled ? '녹화 중입니다. 종료하면 기기에 바로 저장됩니다.' : '마이크 권한 없이 영상만 녹화 중입니다. 종료하면 기기에 바로 저장됩니다.');
+    } catch (error) {
+      console.error('녹화 시작 실패:', error);
+      cleanupRecordingAudioStream();
+      setIsRecording(false);
+      setRecordingStatus('녹화를 시작할 수 없습니다. 브라우저 호환성을 확인해 주세요.');
+      alert('녹화를 시작할 수 없습니다. 최신 Safari 또는 Chrome에서 다시 시도해 주세요.');
+    }
+  }, [cleanupRecordingAudioStream, finalizeRecordingDownload]);
 
   const applyPromptOffset = useCallback((nextOffset) => {
     const clampedOffset = clamp(nextOffset, 0, promptMaxOffsetRef.current);
@@ -241,6 +390,7 @@ function ScriptPracticePage() {
 
   useEffect(() => {
     if (!cameraEnabled) {
+      stopRecording();
       stopCameraStream();
       return undefined;
     }
@@ -303,7 +453,7 @@ function ScriptPracticePage() {
       cancelled = true;
       stopCameraStream();
     };
-  }, [cameraEnabled, isCompactViewport]);
+  }, [cameraEnabled, isCompactViewport, stopRecording]);
 
   useEffect(() => {
     if (!isPlaying || !canAutoScroll) return undefined;
@@ -336,7 +486,11 @@ function ScriptPracticePage() {
     };
   }, [applyPromptOffset, canAutoScroll, effectiveScrollSpeed, isPlaying]);
 
-  useEffect(() => () => stopCameraStream(), []);
+  useEffect(() => () => {
+    stopRecording();
+    cleanupRecordingAudioStream();
+    stopCameraStream();
+  }, [cleanupRecordingAudioStream, stopRecording]);
 
   useEffect(() => {
     if (!isDraggingRemote) return undefined;
@@ -392,6 +546,15 @@ function ScriptPracticePage() {
   const handleTogglePlay = () => {
     if (!canAutoScroll) return;
     setIsPlaying((prev) => !prev);
+  };
+
+  const handleToggleRecording = () => {
+    if (isRecording) {
+      stopRecording();
+      return;
+    }
+
+    startRecording();
   };
 
   const handleToggleFocusMode = () => {
@@ -521,7 +684,7 @@ function ScriptPracticePage() {
               {!isFocusMode && (
               <div className="mb-3 flex flex-col gap-2 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-200 sm:mb-4 sm:flex-row sm:items-center sm:justify-between">
                 <span>{selectedScript?.title || '원고를 선택해 주세요'}</span>
-                <span>{teleprompterStatus}</span>
+                <span>{isRecording ? '녹화 중' : teleprompterStatus}</span>
               </div>
               )}
               <div
@@ -588,6 +751,12 @@ function ScriptPracticePage() {
         </div>
       )}
 
+      {recordingStatus && (
+        <div className={`rounded-[1.5rem] px-5 py-4 text-sm font-semibold ${isRecording ? 'border border-red-200 bg-red-50 text-red-700' : 'border border-emerald-200 bg-emerald-50 text-emerald-700'}`}>
+          {recordingStatus}
+        </div>
+      )}
+
       {isRemoteVisible ? (
       <div
         className={`fixed left-1/2 z-[80] -translate-x-1/2 border border-slate-200/90 bg-white/92 text-slate-950 shadow-2xl backdrop-blur-xl transition-all ${isRemoteExpanded ? 'w-[calc(100vw-0.75rem)] rounded-[1.35rem] p-3 sm:w-[min(92vw,64rem)] sm:rounded-[1.6rem] sm:p-3.5' : 'w-[calc(100vw-0.75rem)] rounded-[1.1rem] p-2 sm:w-[min(88vw,56rem)] sm:rounded-[1.2rem] sm:p-2.5'}`}
@@ -615,6 +784,14 @@ function ScriptPracticePage() {
               className={`rounded-full px-3 py-2 text-xs font-bold transition-colors sm:px-4 ${selectedScript && canAutoScroll ? 'bg-sky-400 text-slate-950 hover:bg-sky-300' : 'bg-slate-200 text-slate-400'}`}
             >
               {isPlaying ? '정지' : '시작'}
+            </button>
+            <button
+              type="button"
+              onClick={handleToggleRecording}
+              disabled={!cameraEnabled}
+              className={`rounded-full px-3 py-2 text-xs font-bold transition-colors sm:px-4 ${cameraEnabled ? (isRecording ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-slate-900 text-white hover:bg-slate-700') : 'bg-slate-200 text-slate-400'}`}
+            >
+              {isRecording ? '녹화 종료' : '녹화 시작'}
             </button>
             <button
               type="button"
@@ -694,6 +871,14 @@ function ScriptPracticePage() {
             className={`rounded-full px-4 py-2 text-xs font-bold shadow-xl backdrop-blur-xl transition-colors ${canAutoScroll ? 'bg-sky-400 text-slate-950 hover:bg-sky-300' : 'bg-slate-200 text-slate-400'}`}
           >
             {isPlaying ? '정지' : '시작'}
+          </button>
+          <button
+            type="button"
+            onClick={handleToggleRecording}
+            disabled={!cameraEnabled}
+            className={`rounded-full px-4 py-2 text-xs font-bold shadow-xl backdrop-blur-xl transition-colors ${cameraEnabled ? (isRecording ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-slate-900 text-white hover:bg-slate-700') : 'bg-slate-200 text-slate-400'}`}
+          >
+            {isRecording ? '녹화 종료' : '녹화'}
           </button>
           <button
             type="button"
