@@ -30,6 +30,20 @@ const resolveRecordingConfig = () => {
   return RECORDING_MIME_CANDIDATES.find((candidate) => window.MediaRecorder.isTypeSupported(candidate.mimeType)) || { mimeType: '', extension: 'webm' };
 };
 
+const resolveRecordingOutput = (mimeType) => {
+  const normalizedMimeType = (mimeType || '').toLowerCase();
+
+  if (normalizedMimeType.includes('mp4')) {
+    return { mimeType: 'video/mp4', extension: 'mp4' };
+  }
+
+  if (normalizedMimeType.includes('webm')) {
+    return { mimeType: 'video/webm', extension: 'webm' };
+  }
+
+  return { mimeType: mimeType || 'video/webm', extension: 'webm' };
+};
+
 const buildRecordingFilename = (title, extension) => {
   const baseTitle = (title || 'teleprompter-practice').replace(/[\\/:*?"<>|]/g, '_').trim() || 'teleprompter-practice';
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -47,7 +61,7 @@ function ScriptPracticePage() {
   const mediaRecorderRef = useRef(null);
   const recordingChunksRef = useRef([]);
   const recordingAudioStreamRef = useRef(null);
-  const recordingExtensionRef = useRef('webm');
+  const recordingFormatRef = useRef({ mimeType: 'video/webm', extension: 'webm' });
   const promptAnimationFrameRef = useRef(0);
   const promptOffsetRef = useRef(0);
   const promptMaxOffsetRef = useRef(0);
@@ -170,9 +184,11 @@ function ScriptPracticePage() {
       const recorderOptions = recordingConfig.mimeType ? { mimeType: recordingConfig.mimeType } : undefined;
       const recorder = new window.MediaRecorder(recordingStream, recorderOptions);
 
+      const recorderOutput = resolveRecordingOutput(recorder.mimeType || recordingConfig.mimeType);
+
       mediaRecorderRef.current = recorder;
       recordingChunksRef.current = [];
-      recordingExtensionRef.current = recordingConfig.extension;
+      recordingFormatRef.current = recorderOutput;
 
       recorder.ondataavailable = (event) => {
         if (event.data && event.data.size > 0) {
@@ -182,10 +198,10 @@ function ScriptPracticePage() {
 
       recorder.onstop = () => {
         const chunks = recordingChunksRef.current;
-        const blobType = chunks[0]?.type || recordingConfig.mimeType || 'video/webm';
+        const finalOutput = resolveRecordingOutput(chunks[0]?.type || recorder.mimeType || recordingFormatRef.current.mimeType);
 
         if (chunks.length > 0) {
-          finalizeRecordingDownload(new Blob(chunks, { type: blobType }), recordingExtensionRef.current);
+          finalizeRecordingDownload(new Blob(chunks, { type: finalOutput.mimeType }), finalOutput.extension);
           setRecordingStatus('녹화 파일이 기기에 저장되었습니다.');
         } else {
           setRecordingStatus('저장할 녹화 데이터가 없습니다. 다시 시도해 주세요.');
@@ -193,6 +209,7 @@ function ScriptPracticePage() {
 
         mediaRecorderRef.current = null;
         recordingChunksRef.current = [];
+        recordingFormatRef.current = { mimeType: 'video/webm', extension: 'webm' };
         cleanupRecordingAudioStream();
         setIsRecording(false);
       };
@@ -202,11 +219,12 @@ function ScriptPracticePage() {
         setRecordingStatus('녹화 중 오류가 발생했습니다. 다시 시도해 주세요.');
         mediaRecorderRef.current = null;
         recordingChunksRef.current = [];
+        recordingFormatRef.current = { mimeType: 'video/webm', extension: 'webm' };
         cleanupRecordingAudioStream();
         setIsRecording(false);
       };
 
-      recorder.start(250);
+      recorder.start();
       setIsRecording(true);
       setRecordingStatus(microphoneEnabled ? '녹화 중입니다. 종료하면 기기에 바로 저장됩니다.' : '마이크 권한 없이 영상만 녹화 중입니다. 종료하면 기기에 바로 저장됩니다.');
     } catch (error) {
